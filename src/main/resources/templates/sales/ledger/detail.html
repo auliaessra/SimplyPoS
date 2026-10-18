@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{cl.detail.title}">Customer Ledger Detail</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a th:href="@{/web/sales/customer-payments/create(customerId=${customer.customerId})}"
+                class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-cash-stack"></i>
+                <span th:text="#{cp.new}">Receive Payment</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+                <span th:text="#{common.print}">Print</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/sales/customer-ledgers" class="bc-ribbon-btn">
+                <i class="bi bi-arrow-left"></i>
+                <span th:text="#{common.back.list}">Back</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header" style="padding:20px 24px;">
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <div style="width:48px;height:48px;border-radius:50%;
+                            background:linear-gradient(135deg,#0078D4,#50E6FF);
+                            display:flex;align-items:center;justify-content:center;
+                            color:#fff;font-size:20px;font-weight:600;">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--bc-text-secondary);
+                                text-transform:uppercase;letter-spacing:.5px;" th:text="#{cl.detail.title}">Customer
+                            Ledger (AR)</div>
+                        <h1 style="margin:2px 0 0;font-size:22px;font-weight:600;" th:text="${customer.customerName}">
+                        </h1>
+                        <div style="font-size:12px;color:var(--bc-text-secondary);margin-top:2px;">
+                            <strong th:text="${customer.customerCode}"></strong>
+                            <span th:if="${customer.customerPhone != null}">
+                                · <i class="bi bi-telephone"></i>
+                                <span th:text="${customer.customerPhone}"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:11px;color:var(--bc-text-secondary);
+                            text-transform:uppercase;letter-spacing:.5px;" th:text="#{cl.field.total.ar}">Total AR
+                    </div>
+                    <div style="font-size:22px;font-weight:700;color:var(--bc-danger);margin-top:4px;"
+                        th:with="total=${ledgers.isEmpty() ? 0 : ledgers[ledgers.size()-1].balance}"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(total, 0, 'COMMA', 2, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div style="font-size:11px;color:var(--bc-text-secondary);">
+                        <span th:text="${ledgers.size()}">0</span>
+                        <span th:text="#{common.entries}">entries</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;margin-bottom:24px;">
+            <div class="bc-card-header">
+                <span><i class="bi bi-journal-bookmark" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{cl.detail.history}">Ledger History</span></span>
+                <span class="bc-badge bc-badge-info" th:text="${ledgers.size()} + ' entries'"></span>
+            </div>
+
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;text-align:center;">#</th>
+                        <th style="width:120px;" th:text="#{common.date}">Date</th>
+                        <th style="width:130px;" th:text="#{common.status.detail}">Type</th>
+                        <th style="width:150px;" th:text="#{cp.field.payment.number}">Document No</th>
+                        <th th:text="#{common.description}">Description</th>
+                        <th style="width:150px;text-align:right;" th:text="#{common.total}">Debit</th>
+                        <th style="width:150px;text-align:right;" th:text="#{common.total}">Credit</th>
+                        <th style="width:160px;text-align:right;" th:text="#{pi.field.outstanding}">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l, stat : ${ledgers}">
+                        <td style="text-align:center;color:var(--bc-text-muted);font-size:12px;"
+                            th:text="${stat.count}"></td>
+                        <td th:text="${#temporals.format(l.transactionDate, 'dd/MM/yyyy')}"></td>
+                        <td>
+                            <span th:if="${l.documentType == 'SALE'}" class="bc-badge bc-badge-warning">
+                                <i class="bi bi-receipt"></i>
+                                <span th:text="#{status.draft}">SALE</span>
+                            </span>
+                            <span th:if="${l.documentType == 'RECEIPT'}" class="bc-badge bc-badge-success">
+                                <i class="bi bi-cash-stack"></i>
+                                <span th:text="#{cp.title}">RECEIPT</span>
+                            </span>
+                            <span th:if="${l.documentType == 'SALE_VOID'}" class="bc-badge bc-badge-danger">
+                                <i class="bi bi-x-circle"></i>
+                                <span th:text="#{status.void}">VOID</span>
+                            </span>
+                            <span th:if="${l.documentType == 'ADJUSTMENT'}" class="bc-badge bc-badge-secondary">
+                                <i class="bi bi-sliders"></i>
+                                <span>ADJ</span>
+                            </span>
+                        </td>
+                        <td><strong style="color:var(--bc-primary);font-size:12px;" th:text="${l.documentNo}"></strong>
+                        </td>
+                        <td style="font-size:12px;color:var(--bc-text-secondary);" th:text="${l.description} ?: '-'">-
+                        </td>
+
+                        <td style="text-align:right;font-weight:600;"
+                            th:if="${l.amount != null and l.amount.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                            th:text="${#numbers.formatDecimal(l.amount, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;color:var(--bc-text-muted);"
+                            th:unless="${l.amount != null and l.amount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">-
+                        </td>
+
+                        <td style="text-align:right;font-weight:600;color:var(--bc-success);"
+                            th:if="${l.amount != null and l.amount.compareTo(T(java.math.BigDecimal).ZERO) < 0}"
+                            th:text="${#numbers.formatDecimal(l.amount.abs(), 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;color:var(--bc-text-muted);"
+                            th:unless="${l.amount != null and l.amount.compareTo(T(java.math.BigDecimal).ZERO) < 0}">-
+                        </td>
+
+                        <td style="text-align:right;font-weight:700;" th:styleappend="${l.balance != null and l.balance.compareTo(T(java.math.BigDecimal).ZERO) > 0}
+                                     ? 'color:var(--bc-danger);' : 'color:var(--bc-success);'"
+                            th:text="${#numbers.formatDecimal(l.balance, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                    <tr th:if="${ledgers.isEmpty()}">
+                        <td colspan="8">
+                            <div class="bc-empty">
+                                <i class="bi bi-journal-x"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+
+                <tfoot th:if="${!ledgers.isEmpty()}">
+                    <tr style="background:var(--bc-bg-sidebar);">
+                        <td colspan="7" style="text-align:right;padding:12px;font-weight:600;
+                                       text-transform:uppercase;letter-spacing:.5px;" th:text="#{cl.field.total.ar}">
+                            Total AR</td>
+                        <td style="text-align:right;padding:12px;font-weight:700;
+                           font-size:16px;color:var(--bc-danger);" th:with="total=${ledgers[ledgers.size()-1].balance}"
+                            th:text="${#numbers.formatDecimal(total, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+    </th:block>
+
+</body>
+
+</html>

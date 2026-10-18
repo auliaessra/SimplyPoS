@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{items.title}">Item Form</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="itemForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i> <span th:text="#{common.save}">Save</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/master/items" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i> <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="itemForm"
+                th:action="${id != null} ? @{/web/master/items/edit/{id}(id=${id})} : @{/web/master/items/create}"
+                th:object="${item}" method="post">
+
+                <div class="bc-card-header">
+                    <span><i class="bi bi-box-seam" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{items.title}">Item</span></span>
+                    <span class="bc-badge bc-badge-secondary" th:text="${id != null} ? 'EDIT' : 'NEW'">NEW</span>
+                </div>
+
+                <div class="bc-card-body">
+                    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{items.field.code}">Code</label>
+                            <input type="text" th:field="*{code}" class="bc-input" required>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{items.field.name}">Name</label>
+                            <input type="text" th:field="*{name}" class="bc-input" required>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{items.field.unit}">Unit</label>
+                            <select th:field="*{unitId}" class="bc-select" required>
+                                <option value="" th:text="#{common.select.item}">- Pilih Unit -</option>
+                                <option th:each="u : ${units}" th:value="${u.id}"
+                                    th:text="${u.code} + ' - ' + ${u.name}"
+                                    th:selected="${item.unitId != null and item.unitId == u.id}"></option>
+                            </select>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{items.field.unit.hint}">
+                                Unit utama untuk item ini (untuk display & konversi)
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="bc-form-group">
+                        <label class="bc-label" th:text="#{items.field.description}">Description</label>
+                        <textarea th:field="*{description}" class="bc-textarea" rows="3"></textarea>
+                    </div>
+
+                    <div class="bc-form-group">
+                        <label class="bc-checkbox">
+                            <input type="checkbox" th:field="*{isActive}">
+                            <span th:text="#{common.active}">Active</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bc-card-body" style="border-top:1px solid var(--bc-border);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                        <button type="submit" class="bc-btn bc-btn-primary">
+                            <i class="bi bi-check-lg"></i> <span th:text="#{common.save}">Save</span>
+                        </button>
+                        <a href="/web/master/items" class="bc-btn bc-btn-default">
+                            <i class="bi bi-x-lg"></i> <span th:text="#{common.cancel}">Cancel</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+</body>
+
+</html>

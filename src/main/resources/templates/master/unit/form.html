@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{units.title}">Unit Form</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="unitForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/master/units" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i>
+                <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="unitForm"
+                th:action="${id != null} ? @{/web/master/units/edit/{id}(id=${id})} : @{/web/master/units/create}"
+                th:object="${unit}" method="post">
+
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-rulers" style="color:var(--bc-primary);"></i>
+                        <span th:text="${pageTitle}">Unit</span>
+                    </span>
+                    <span class="bc-badge bc-badge-secondary" th:text="${id != null} ? 'EDIT' : 'NEW'">NEW</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{units.field.code}">Kode</label>
+                            <input type="text" th:field="*{code}" class="bc-input" placeholder="ML" required
+                                style="text-transform:uppercase;font-family:monospace;" th:readonly="${id != null}">
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{units.field.code.hint}">
+                                Kode singkat (contoh: ML, LTR, BTL)
+                            </small>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{units.field.name}">Nama</label>
+                            <input type="text" th:field="*{name}" class="bc-input" placeholder="Mililiter" required>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{units.field.category}">Kategori</label>
+                            <select th:field="*{category}" class="bc-select" required>
+                                <option value="VOLUME">VOLUME</option>
+                                <option value="WEIGHT">WEIGHT</option>
+                                <option value="COUNT">COUNT</option>
+                            </select>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{units.field.order}">Urutan</label>
+                            <input type="number" th:field="*{sortOrder}" class="bc-input" min="0" step="1">
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{units.field.order.hint}">
+                                Semakin kecil, semakin atas
+                            </small>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{common.status}">Status</label>
+                            <label class="bc-checkbox">
+                                <input type="checkbox" th:field="*{isActive}"
+                                    th:disabled="${id != null and unit.isBase}">
+                                <span th:text="#{common.active}">Aktif</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bc-form-group" th:if="${id == null}">
+                        <label class="bc-checkbox">
+                            <input type="checkbox" th:field="*{isBase}">
+                            <span th:text="#{units.field.is.base}">
+                                Jadikan sebagai base unit
+                            </span>
+                        </label>
+                        <small style="font-size:11px;color:var(--bc-text-secondary);
+                                  display:block;margin-top:4px;" th:text="#{units.field.is.base.hint}">
+                            Base unit adalah unit acuan untuk konversi. Hanya boleh ada 1 base unit.
+                        </small>
+                    </div>
+
+                    <div class="bc-form-group" th:if="${id != null and unit.isBase}">
+                        <div class="bc-alert bc-alert-info" style="margin:0;">
+                            <i class="bi bi-star-fill"></i>
+                            <span th:text="#{units.base.locked}">
+                                Unit ini adalah base unit dan tidak dapat diubah status base-nya.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="bc-form-group">
+                        <label class="bc-label" th:text="#{common.description}">Deskripsi</label>
+                        <textarea th:field="*{description}" class="bc-textarea" rows="3"></textarea>
+                    </div>
+
+                </div>
+
+                <div class="bc-card-body" style="border-top:1px solid var(--bc-border);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                        <button type="submit" class="bc-btn bc-btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            <span th:text="#{common.save}">Simpan</span>
+                        </button>
+                        <a href="/web/master/units" class="bc-btn bc-btn-default">
+                            <i class="bi bi-x-lg"></i>
+                            <span th:text="#{common.cancel}">Batal</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+</body>
+
+</html>

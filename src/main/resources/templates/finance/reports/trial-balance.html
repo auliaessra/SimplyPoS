@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{nav.finance.trial.balance}">Trial Balance</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span th:text="#{common.print}">Print</span>
+            </button>
+            <a href="/web/finance/reports/profit-loss" class="bc-ribbon-btn">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span th:text="#{nav.finance.profit.loss}">P&L</span>
+            </a>
+            <a href="/web/finance/reports/balance-sheet" class="bc-ribbon-btn">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span th:text="#{nav.finance.balance.sheet}">Balance Sheet</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
+                <i class="bi bi-funnel"></i>
+
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+
+                <input type="date" name="from" th:value="${from}" class="bc-input" style="max-width:160px;">
+                <span>→</span>
+                <input type="date" name="to" th:value="${to}" class="bc-input" style="max-width:160px;">
+
+                <button type="submit" class="bc-btn bc-btn-primary bc-btn-sm">
+                    <i class="bi bi-search"></i> <span th:text="#{common.filter}">Filter</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header" style="padding:16px;">
+                <span th:text="#{nav.finance.trial.balance}">Trial Balance</span>
+                <span style="font-size:12px;color:var(--bc-text-secondary);">
+                    <span th:text="${#temporals.format(from, 'dd MMM yyyy')}"></span> →
+                    <span th:text="${#temporals.format(to, 'dd MMM yyyy')}"></span>
+                </span>
+            </div>
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:120px;" th:text="#{info.account}">Code</th>
+                        <th th:text="#{items.field.name}">Account Name</th>
+                        <th style="width:120px;" th:text="#{common.status.detail}">Type</th>
+                        <th style="width:160px;text-align:right;" th:text="#{common.total}">Debit</th>
+                        <th style="width:160px;text-align:right;" th:text="#{common.total}">Credit</th>
+                        <th style="width:160px;text-align:right;" th:text="#{ij.field.balance}">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${rows}">
+                        <td><strong th:text="${r.accountCode}"></strong></td>
+                        <td th:text="${r.accountName}"></td>
+                        <td><span class="bc-badge bc-badge-secondary" th:text="${r.accountType}"></span></td>
+                        <td style="text-align:right;"
+                            th:text="${r.totalDebit > 0} ? 'Rp ' + ${#numbers.formatDecimal(r.totalDebit, 0, 'COMMA', 2, 'POINT')} : '-'">
+                        </td>
+                        <td style="text-align:right;"
+                            th:text="${r.totalCredit > 0} ? 'Rp ' + ${#numbers.formatDecimal(r.totalCredit, 0, 'COMMA', 2, 'POINT')} : '-'">
+                        </td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(r.balance, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </th:block>
+</body>
+
+</html>

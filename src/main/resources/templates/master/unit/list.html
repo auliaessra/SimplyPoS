@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{units.title}">Units</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/master/units/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-plus-lg"></i>
+                <span th:text="#{common.new}">New</span>
+            </a>
+            <a href="/web/master/unit-conversions" class="bc-ribbon-btn">
+                <i class="bi bi-arrow-left-right"></i>
+                <span th:text="#{units.conversion.title}">Konversi Unit</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+                <input type="text" name="q" th:value="${q}" class="bc-input" th:placeholder="#{common.search} + '...'">
+                <button type="submit" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-search"></i>
+                    <span th:text="#{common.search}">Search</span>
+                </button>
+                <a href="/web/master/units" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-x-circle"></i>
+                    <span th:text="#{common.reset}">Reset</span>
+                </a>
+            </form>
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <span th:text="#{common.total}">Total</span>:
+                <strong th:text="${units.size()}">0</strong>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:100px;" th:text="#{units.field.code}">Kode</th>
+                        <th th:text="#{units.field.name}">Nama</th>
+                        <th style="width:130px;" th:text="#{units.field.category}">Kategori</th>
+                        <th style="width:100px;text-align:center;" th:text="#{units.field.base}">Base</th>
+                        <th style="width:100px;" th:text="#{common.status}">Status</th>
+                        <th style="width:60px;text-align:right;" th:text="#{units.field.order}">Order</th>
+                        <th style="width:180px;text-align:right;" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="u : ${units}">
+                        <td>
+                            <span style="font-weight:700;color:var(--bc-primary);
+                                 font-family:monospace;font-size:13px;" th:text="${u.code}">ML</span>
+                        </td>
+                        <td>
+                            <div style="font-weight:600;" th:text="${u.name}">Mililiter</div>
+                            <div th:if="${u.description != null}" style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="${u.description}"></div>
+                        </td>
+                        <td>
+                            <span class="bc-badge" th:classappend="
+                              ${u.category == 'VOLUME' ? 'bc-badge-info' :
+                              u.category == 'WEIGHT' ? 'bc-badge-warning' :
+                              'bc-badge-secondary'}" th:text="${u.category}">VOLUME</span>
+                        </td>
+                        <td style="text-align:center;">
+                            <i th:if="${u.isBase}" class="bi bi-star-fill"
+                                style="color:var(--bc-warning);font-size:16px;" th:title="#{units.base.hint}"></i>
+                            <span th:unless="${u.isBase}" style="color:var(--bc-text-muted);">—</span>
+                        </td>
+                        <td>
+                            <span th:if="${u.isActive}" class="bc-badge bc-badge-success"
+                                th:text="#{common.active}">Active</span>
+                            <span th:unless="${u.isActive}" class="bc-badge bc-badge-secondary"
+                                th:text="#{common.inactive}">Inactive</span>
+                        </td>
+                        <td style="text-align:right;color:var(--bc-text-secondary);" th:text="${u.sortOrder}">0</td>
+                        <td style="text-align:right;">
+                            <div class="bc-table-actions" style="justify-content:flex-end;">
+                                <a th:href="@{/web/master/units/edit/{id}(id=${u.id})}"
+                                    class="bc-btn bc-btn-default bc-btn-sm" th:title="#{common.edit}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:if="${!u.isBase}" th:action="@{/web/master/units/toggle/{id}(id=${u.id})}"
+                                    method="post" style="display:inline;">
+                                    <button class="bc-btn bc-btn-default bc-btn-sm">
+                                        <i class="bi"
+                                            th:classappend="${u.isActive} ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+                                    </button>
+                                </form>
+                                <form th:if="${!u.isBase}" th:action="@{/web/master/units/delete/{id}(id=${u.id})}"
+                                    method="post" style="display:inline;"
+                                    th:attr="data-confirm=#{common.confirm.delete}">
+                                    <button class="bc-btn bc-btn-danger bc-btn-sm" th:title="#{common.delete}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${units.isEmpty()}">
+                        <td colspan="7">
+                            <div class="bc-empty">
+                                <i class="bi bi-rulers"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+</body>
+
+</html>

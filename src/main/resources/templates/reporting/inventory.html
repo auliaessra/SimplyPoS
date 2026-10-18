@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{nav.reports.inventory}">Inventory Report</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span th:text="#{common.print}">Print</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/reports/aging-ar" class="bc-ribbon-btn">
+                <i class="bi bi-hourglass-split"></i>
+                <span th:text="#{nav.reports.aging.ar}">AR Aging</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
+                <i class="bi bi-funnel"></i>
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select" onchange="this.form.submit()">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+            </form>
+        </div>
+
+        <div class="bc-stats" style="padding:16px 24px 0;">
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon blue"><i class="bi bi-box-seam"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(report.totalValue, 0, 'COMMA', 0, 'POINT')}">Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{inv.total.value}">Total Inventory Value</div>
+                </div>
+            </div>
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon green"><i class="bi bi-list-check"></i></div>
+                <div>
+                    <div class="bc-stat-value" th:text="${report.totalItems}">0</div>
+                    <div class="bc-stat-label" th:text="#{inv.total.items}">Total SKU</div>
+                </div>
+            </div>
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon red"><i class="bi bi-exclamation-triangle"></i></div>
+                <div>
+                    <div class="bc-stat-value" th:styleappend="${report.lowStockCount > 0} ? 'color:var(--bc-danger);'"
+                        th:text="${report.lowStockCount}">0</div>
+                    <div class="bc-stat-label" th:text="#{inv.low.stock}">Low Stock Items</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin:16px 24px 0;">
+            <div class="bc-card-header">
+                <span>
+                    <i class="bi bi-exclamation-triangle" style="color:var(--bc-danger);"></i>
+                    <span th:text="#{inv.low.stock.items}">Low Stock Items</span>
+                </span>
+                <span class="bc-badge bc-badge-danger" th:text="${report.lowStockItems.size()} + ' item'"></span>
+            </div>
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:130px;" th:text="#{items.field.code}">Code</th>
+                        <th th:text="#{items.field.name}">Name</th>
+                        <th th:text="#{common.store}">Store</th>
+                        <th style="width:130px;text-align:right;" th:text="#{inv.stock}">Stock (ML)</th>
+                        <th style="width:130px;text-align:right;" th:text="#{inv.min.stock}">Min (ML)</th>
+                        <th style="width:140px;text-align:right;" th:text="#{inv.value}">Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="i : ${report.lowStockItems}">
+                        <td><strong style="color:var(--bc-primary);" th:text="${i.itemCode}"></strong></td>
+                        <td th:text="${i.itemName}"></td>
+                        <td th:text="${i.storeName}"></td>
+                        <td style="text-align:right;font-weight:600;color:var(--bc-danger);"
+                            th:text="${#numbers.formatDecimal(i.stockQtyMl, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;color:var(--bc-text-secondary);"
+                            th:text="${#numbers.formatDecimal(i.minStockMl, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(i.totalValue, 0, 'COMMA', 0, 'POINT')}"></td>
+                    </tr>
+                    <tr th:if="${report.lowStockItems.isEmpty()}">
+                        <td colspan="6">
+                            <div class="bc-empty">
+                                <i class="bi bi-check2-circle" style="color:var(--bc-success);"></i>
+                                <div th:text="#{inv.all.stock.ok}">All items are in stock</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bc-card" style="margin:16px 24px 24px;">
+            <div class="bc-card-header">
+                <span>
+                    <i class="bi bi-list-check" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{inv.all.items}">All Inventory Items</span>
+                </span>
+            </div>
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:130px;" th:text="#{items.field.code}">Code</th>
+                        <th th:text="#{items.field.name}">Name</th>
+                        <th th:text="#{common.store}">Store</th>
+                        <th style="width:130px;text-align:right;" th:text="#{inv.stock}">Stock (ML)</th>
+                        <th style="width:140px;text-align:right;" th:text="#{common.unit.cost}">Unit Cost</th>
+                        <th style="width:160px;text-align:right;" th:text="#{inv.value}">Value</th>
+                        <th style="width:100px;text-align:center;" th:text="#{common.status}">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="i : ${report.items}">
+                        <td><strong th:text="${i.itemCode}"></strong></td>
+                        <td th:text="${i.itemName}"></td>
+                        <td th:text="${i.storeName}"></td>
+                        <td style="text-align:right;"
+                            th:text="${#numbers.formatDecimal(i.stockQtyMl, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(i.unitCost, 0, 'COMMA', 0, 'POINT')}"></td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(i.totalValue, 0, 'COMMA', 0, 'POINT')}"></td>
+                        <td style="text-align:center;">
+                            <span th:if="${i.lowStock}" class="bc-badge bc-badge-danger" th:text="#{inv.low}">LOW</span>
+                            <span th:unless="${i.lowStock}" class="bc-badge bc-badge-success"
+                                th:text="#{inv.ok}">OK</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+</body>
+
+</html>

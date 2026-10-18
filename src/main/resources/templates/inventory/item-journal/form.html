@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{ij.new}">New Item Journal</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="ijForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i> <span th:text="#{common.save.draft}">Save Draft</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="addLine()">
+                <i class="bi bi-plus-circle"></i> <span th:text="#{common.add.line}">Add Line</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/inventory/item-journals" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i> <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="ijForm" th:action="@{/web/inventory/item-journals/create}" th:object="${journal}" method="post">
+
+                <div class="bc-card-header">
+                    <span><i class="bi bi-sliders" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{ij.new}">New Item Journal</span></span>
+                    <span class="bc-badge bc-badge-secondary" th:text="#{status.draft}">DRAFT</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <div th:if="${isSuperAdmin}" style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{common.store}">Store</label>
+                            <select th:field="*{storeId}" class="bc-select" required>
+                                <option value="" th:text="#{common.select.store}">Select Store</option>
+                                <option th:each="s : ${stores}" th:value="${s.id}"
+                                    th:text="${s.code} + ' - ' + ${s.name}"></option>
+                            </select>
+                        </div>
+                        <div></div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{common.date}">Journal Date</label>
+                            <input type="date" th:field="*{journalDate}" class="bc-input" required>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{ij.field.reason}">Reason</label>
+                            <select th:field="*{reason}" class="bc-select" required>
+                                <option value="OPNAME" th:text="#{ij.reason.opname}">Stock Opname</option>
+                                <option value="DAMAGE" th:text="#{ij.reason.damage}">Damage</option>
+                                <option value="LOSS" th:text="#{ij.reason.loss}">Loss</option>
+                                <option value="FOUND" th:text="#{ij.reason.found}">Found</option>
+                                <option value="OTHER" th:text="#{ij.reason.other}">Other</option>
+                            </select>
+                        </div>
+                        <div></div>
+                    </div>
+
+                    <div style="margin-top:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;
+                                padding:10px 0;border-bottom:2px solid var(--bc-border);">
+                            <strong style="font-size:13px;">
+                                <i class="bi bi-list-ul" style="color:var(--bc-primary);"></i>
+                                <span th:text="#{common.item.lines}">Item Lines</span>
+                                <span class="bc-badge bc-badge-info" id="lineCount">0</span>
+                            </strong>
+                            <button type="button" class="bc-btn bc-btn-default bc-btn-sm" onclick="addLine()">
+                                <i class="bi bi-plus-lg"></i> <span th:text="#{common.add.line}">Add</span>
+                            </button>
+                        </div>
+                        <div class="bc-card" style="margin-top:8px;">
+                            <table class="bc-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width:40px;text-align:center;">#</th>
+                                        <th th:text="#{common.item}">Item</th>
+                                        <th style="width:150px;text-align:right;" th:text="#{ij.field.qty}">Qty (ML) +/-
+                                        </th>
+                                        <th style="width:170px;text-align:right;" th:text="#{common.unit.cost}">Unit
+                                            Cost
+                                        </th>
+                                        <th style="width:50px;text-align:center;">&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemLines"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bc-form-group" style="margin-top:20px;">
+                        <label class="bc-label" th:text="#{common.notes}">Notes</label>
+                        <textarea th:field="*{notes}" class="bc-textarea" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="bc-card-body"
+                    style="border-top:1px solid var(--bc-border);background:var(--bc-bg-sidebar);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                        <button type="submit" class="bc-btn bc-btn-primary">
+                            <i class="bi bi-check-lg"></i> <span th:text="#{common.save}">Save</span>
+                        </button>
+                        <a href="/web/inventory/item-journals" class="bc-btn bc-btn-default">
+                            <i class="bi bi-x-lg"></i> <span th:text="#{common.cancel}">Cancel</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            const I18N = {
+                selectItem: /*[[#{common.select.item}]]*/ 'Select Item',
+                currency:   /*[[#{common.currency.prefix}]]*/ 'Rp'
+            };
+            const itemsCatalog = /*[[${items}]]*/[];
+            let lineIndex = 0;
+
+            function addLine() {
+                const tbody = document.getElementById('itemLines');
+                const idx = lineIndex++;
+                const opts = itemsCatalog.map(i =>
+                    `<option value="${i.id}">${i.code} - ${i.name}</option>`).join('');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+            <td style="text-align:center;color:var(--bc-text-muted);font-size:12px;" class="line-number"></td>
+            <td>
+                <select name="items[${idx}].itemId" class="bc-select" required>
+                    <option value="">${I18N.selectItem}</option>${opts}
+                </select>
+            </td>
+            <td><input type="number" step="0.001" name="items[${idx}].qtyMlAdjustment"
+                       class="bc-input" style="text-align:right;" required
+                       placeholder="+/- ML"></td>
+            <td>
+                <div style="position:relative;">
+                    <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);
+                                 color:var(--bc-text-secondary);font-size:12px;
+                                 pointer-events:none;">${I18N.currency}</span>
+                    <input type="number" step="0.01" name="items[${idx}].unitCost"
+                           class="bc-input" style="text-align:right;padding-left:36px;">
+                </div>
+            </td>
+            <td style="text-align:center;">
+                <button type="button" class="bc-btn bc-btn-danger bc-btn-sm"
+                        onclick="this.closest('tr').remove(); updateNumbers();">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </td>`;
+                tbody.appendChild(tr);
+                updateNumbers();
+            }
+
+            function updateNumbers() {
+                const rows = document.querySelectorAll('#itemLines tr');
+                rows.forEach((row, i) => row.querySelector('.line-number').textContent = i + 1);
+                document.getElementById('lineCount').textContent = rows.length;
+            }
+
+            document.addEventListener('DOMContentLoaded', addLine);
+        </script>
+    </th:block>
+</body>
+
+</html>

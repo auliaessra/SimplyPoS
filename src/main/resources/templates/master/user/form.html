@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{users.title}">User Form</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="userForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/master/users" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i>
+                <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="userForm"
+                th:action="${id != null} ? @{/web/master/users/edit/{id}(id=${id})} : @{/web/master/users/create}"
+                th:object="${user}" method="post">
+
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-person" style="color:var(--bc-primary);"></i>
+                        <span th:text="${pageTitle}">User</span>
+                    </span>
+                    <span class="bc-badge bc-badge-secondary" th:text="${id != null} ? 'EDIT' : 'NEW'">NEW</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <!-- Basic Info -->
+                    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{users.field.username}">Username</label>
+                            <input type="text" th:field="*{username}" class="bc-input" required>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{users.field.username.hint}">Digunakan untuk login</small>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{users.field.fullname}">Nama Lengkap</label>
+                            <input type="text" th:field="*{fullName}" class="bc-input" required>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{users.field.email}">Email</label>
+                            <input type="email" th:field="*{email}" class="bc-input">
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{users.field.phone}">Telepon</label>
+                            <input type="text" th:field="*{phone}" class="bc-input">
+                        </div>
+                    </div>
+
+                    <!-- Role & Store -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;
+                            padding-top:16px;border-top:1px dashed var(--bc-border);
+                            margin-top:8px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{users.field.role}">Role</label>
+                            <select th:field="*{role}" id="roleSelect" class="bc-select" required>
+                                <option value="">- Pilih Role -</option>
+                                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="CASHIER">CASHIER</option>
+                                <option value="STAFF">STAFF</option>
+                            </select>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{users.field.role.hint}">
+                                SUPER_ADMIN: akses semua cabang · ADMIN: kelola cabangnya
+                            </small>
+                        </div>
+
+                        <div class="bc-form-group" id="storeField">
+                            <label class="bc-label required" th:text="#{common.store}">Cabang</label>
+                            <select th:field="*{storeId}" id="storeSelect" class="bc-select">
+                                <option value="">- Pilih Cabang -</option>
+                                <option th:each="s : ${stores}" th:value="${s.id}"
+                                    th:text="${s.code} + ' - ' + ${s.name}"></option>
+                            </select>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{users.field.store.hint}">
+                                Tidak wajib untuk SUPER_ADMIN
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div style="padding-top:16px;border-top:1px dashed var(--bc-border);
+                            margin-top:8px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:if="${id != null}" th:text="#{users.field.new.password}">Password
+                                Baru (kosongkan jika tidak diubah)</label>
+                            <label class="bc-label required" th:if="${id == null}"
+                                th:text="#{users.field.password}">Password</label>
+                            <input type="password" th:field="*{password}" class="bc-input" autocomplete="new-password"
+                                th:attr="required=${id == null}">
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{users.field.password.hint}">
+                                Minimal 6 karakter
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="bc-form-group">
+                        <label class="bc-label" th:text="#{common.status}">Status</label>
+                        <select th:field="*{status}" class="bc-select">
+                            <option value="ACTIVE" th:text="#{common.active}">Active</option>
+                            <option value="INACTIVE" th:text="#{common.inactive}">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bc-card-body" style="border-top:1px solid var(--bc-border);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                        <button type="submit" class="bc-btn bc-btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            <span th:text="#{common.save}">Save</span>
+                        </button>
+                        <a href="/web/master/users" class="bc-btn bc-btn-default">
+                            <i class="bi bi-x-lg"></i>
+                            <span th:text="#{common.cancel}">Cancel</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="scripts">
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const roleSelect = document.getElementById('roleSelect');
+                const storeField = document.getElementById('storeField');
+                const storeSelect = document.getElementById('storeSelect');
+
+                function toggleStore() {
+                    const isSuper = roleSelect.value === 'SUPER_ADMIN';
+                    storeField.style.display = isSuper ? 'none' : 'block';
+                    if (isSuper) storeSelect.value = '';
+                }
+                roleSelect.addEventListener('change', toggleStore);
+                toggleStore();
+            });
+        </script>
+    </th:block>
+</body>
+
+</html>

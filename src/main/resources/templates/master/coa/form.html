@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{coa.title}">COA Form</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="coaForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i> <span th:text="#{common.save}">Save</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/master/coa" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i> <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="coaForm"
+                th:action="${id != null} ? @{/web/master/coa/edit/{id}(id=${id})} : @{/web/master/coa/create}"
+                th:object="${coa}" method="post">
+
+                <div class="bc-card-header">
+                    <span><i class="bi bi-diagram-3" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{coa.title}">COA</span></span>
+                    <span class="bc-badge bc-badge-secondary" th:text="${id != null} ? 'EDIT' : 'NEW'">NEW</span>
+                </div>
+
+                <div class="bc-card-body">
+                    <div style="display:grid;grid-template-columns:200px 1fr 200px;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{coa.field.code}">Account Code</label>
+                            <input type="text" th:field="*{accountCode}" class="bc-input" required>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{coa.field.name}">Account Name</label>
+                            <input type="text" th:field="*{accountName}" class="bc-input" required>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{coa.field.type}">Type</label>
+                            <select th:field="*{accountType}" class="bc-select" required>
+                                <option value="">-</option>
+                                <option value="ASSET">ASSET</option>
+                                <option value="LIABILITY">LIABILITY</option>
+                                <option value="EQUITY">EQUITY</option>
+                                <option value="REVENUE">REVENUE</option>
+                                <option value="EXPENSE">EXPENSE</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{coa.field.parent.optional}">Parent (Optional)</label>
+                            <select th:field="*{parentId}" class="bc-select">
+                                <option value="">-</option>
+                                <option th:each="p : ${parents}" th:value="${p.id}"
+                                    th:text="${p.accountCode} + ' - ' + ${p.accountName}"
+                                    th:disabled="${id != null and p.id == id}"></option>
+                            </select>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{coa.info.global}">Used for all branches.</small>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{coa.field.status}">Status</label>
+                            <label class="bc-checkbox">
+                                <input type="checkbox" th:field="*{isActive}">
+                                <span th:text="#{common.active}">Active</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bc-card-body" style="border-top:1px solid var(--bc-border);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                        <button type="submit" class="bc-btn bc-btn-primary">
+                            <i class="bi bi-check-lg"></i> <span th:text="#{common.save}">Save</span>
+                        </button>
+                        <a href="/web/master/coa" class="bc-btn bc-btn-default">
+                            <i class="bi bi-x-lg"></i> <span th:text="#{common.cancel}">Cancel</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+</body>
+
+</html>

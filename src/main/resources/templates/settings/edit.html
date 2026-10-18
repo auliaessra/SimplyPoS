@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{settings.title} + ' – Edit'">Edit Settings</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="settingsForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/settings" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i>
+                <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <form id="settingsForm" th:action="@{/web/settings/save}" method="post"
+            style="padding:16px 24px;max-width:900px;">
+
+            <!-- Guard: no groups -->
+            <div th:if="${groups == null or groups.isEmpty()}" class="bc-alert bc-alert-info">
+                <i class="bi bi-info-circle"></i>
+                <span th:text="#{common.no.data}">Tidak ada pengaturan</span>
+            </div>
+
+            <!-- ============ LOOP GROUPS ============ -->
+            <div th:each="group : ${groups}" class="bc-card" style="margin:0 0 16px 0;">
+
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi" th:classappend="${group.groupIcon}" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{${group.groupLabel}}">Group</span>
+                    </span>
+                    <span class="bc-badge bc-badge-secondary" th:text="${group.settings.size()} + ' item'">0</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <!-- ============ LOOP SETTINGS dalam GROUP ============ -->
+                    <div th:each="setting : ${group.settings}" class="bc-form-group">
+
+                        <label class="bc-label" th:text="${setting.label}">Label</label>
+
+                        <!-- ============ STRING ============ -->
+                        <input th:if="${setting.settingType == 'STRING'}" type="text" th:name="${setting.settingKey}"
+                            th:value="${setting.settingValue}" class="bc-input">
+
+                        <!-- ============ BOOLEAN ============ -->
+                        <select th:if="${setting.settingType == 'BOOLEAN'}" th:name="${setting.settingKey}"
+                            class="bc-select">
+                            <option value="true" th:selected="${setting.asBoolean()}">
+                                <span th:text="#{common.yes}">Ya</span>
+                            </option>
+                            <option value="false" th:selected="${!setting.asBoolean()}">
+                                <span th:text="#{common.no}">Tidak</span>
+                            </option>
+                        </select>
+
+                        <!-- ============ INTEGER ============ -->
+                        <input th:if="${setting.settingType == 'INTEGER'}" type="number" th:name="${setting.settingKey}"
+                            th:value="${setting.settingValue}" class="bc-input">
+
+                        <!-- ============ FILE ============ -->
+                        <div th:if="${setting.settingType == 'FILE'}">
+                            <!-- Preview -->
+                            <div style="display:flex;align-items:center;gap:12px;
+                                    flex-wrap:wrap;margin-bottom:8px;">
+
+                                <!-- Jika ada file -->
+                                <div th:if="${setting.settingValue != null
+                                         and !setting.settingValue.isEmpty()}"
+                                    style="display:flex;align-items:center;gap:8px;">
+
+                                    <!-- Preview image -->
+                                    <img th:src="${setting.settingValue}" alt="Preview" th:style="'object-fit:contain;border:1px solid var(--bc-border);' +
+                                               'padding:4px;border-radius:4px;background:#fff;' +
+                                               (${setting.settingKey == 'app.favicon.path'
+                                                   ? 'width:48px;height:48px;'
+                                                   : 'max-height:60px;max-width:120px;'})">
+
+                                    <code style="font-size:11px;color:var(--bc-text-secondary);
+                                             background:var(--bc-bg-app);
+                                             padding:2px 6px;border-radius:3px;
+                                             max-width:260px;overflow:hidden;
+                                             text-overflow:ellipsis;white-space:nowrap;"
+                                        th:text="${setting.settingValue}">path</code>
+                                </div>
+
+                                <!-- Jika tidak ada file -->
+                                <span th:if="${setting.settingValue == null
+                                          or setting.settingValue.isEmpty()}" style="font-size:12px;color:var(--bc-text-muted);
+                                         font-style:italic;">
+                                    <span th:text="#{common.no.file}">Belum ada file</span>
+                                </span>
+                            </div>
+
+                            <!-- Actions: Upload + Delete -->
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+
+                                <!-- Upload form (nested form → pakai formaction) -->
+                                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                                    <input type="file" name="file" accept="image/*" class="bc-input"
+                                        form="${'uploadForm-' + setting.settingKey}" style="height:36px;font-size:12px;
+                                              padding:4px 8px;max-width:240px;">
+
+                                    <button type="submit" th:form="${'uploadForm-' + setting.settingKey}"
+                                        class="bc-btn bc-btn-primary bc-btn-sm">
+                                        <i class="bi bi-upload"></i>
+                                        <span th:text="#{common.upload}">Upload</span>
+                                    </button>
+                                </div>
+
+                                <button type="submit" th:if="${setting.settingValue != null
+                                             and !setting.settingValue.isEmpty()}"
+                                    th:form="deleteForm-${setting.settingKey}" class="bc-btn bc-btn-danger bc-btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                    <span th:text="#{common.delete}">Hapus</span>
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <!-- ============ DESC ============ -->
+                        <small th:if="${setting.description != null}" style="font-size:11px;color:var(--bc-text-secondary);
+                                  display:block;margin-top:6px;" th:text="${setting.description}">
+                            Description
+                        </small>
+
+                        <!-- Extra hint for favicon -->
+                        <small th:if="${setting.settingKey == 'app.favicon.path'}" style="font-size:11px;color:var(--bc-warning);
+                                  display:block;margin-top:4px;">
+                            <i class="bi bi-info-circle"></i>
+                            <span th:text="#{settings.favicon.hint}">
+                                Rekomendasi: 32×32 atau 64×64 pixel, PNG/ICO.
+                                Hard refresh (Ctrl+Shift+R) untuk melihat perubahan.
+                            </span>
+                        </small>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ SAVE BUTTON ============ -->
+            <div style="display:flex;gap:8px;">
+                <button type="submit" class="bc-btn bc-btn-primary">
+                    <i class="bi bi-check-lg"></i>
+                    <span th:text="#{common.save}">Simpan</span>
+                </button>
+                <a href="/web/settings" class="bc-btn bc-btn-default">
+                    <i class="bi bi-x-lg"></i>
+                    <span th:text="#{common.cancel}">Batal</span>
+                </a>
+            </div>
+
+        </form>
+
+        <!-- ============================================================
+         HIDDEN FORMS untuk upload/delete (form terpisah karena
+         HTML tidak mengizinkan nested form)
+         ============================================================ -->
+        <th:block th:each="group : ${groups}">
+            <th:block th:each="setting : ${group.settings}">
+                <th:block th:if="${setting.settingType == 'FILE'}">
+
+                    <!-- Upload form -->
+                    <form th:id="'uploadForm-' + ${setting.settingKey}" th:action="@{/web/settings/upload}"
+                        method="post" enctype="multipart/form-data" style="display:none;">
+                        <input type="hidden" name="key" th:value="${setting.settingKey}">
+                    </form>
+
+                    <!-- Delete form -->
+                    <form th:id="'deleteForm-' + ${setting.settingKey}" th:action="@{/web/settings/delete-file}"
+                        method="post" style="display:none;" onsubmit="return confirm('Hapus file ini?');">
+                        <input type="hidden" name="key" th:value="${setting.settingKey}">
+                    </form>
+                </th:block>
+            </th:block>
+        </th:block>
+
+    </th:block>
+</body>
+
+</html>

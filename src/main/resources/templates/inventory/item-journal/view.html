@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title>Item Journal Detail</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <form th:if="${journal.status == 'DRAFT'}"
+                th:action="@{/web/inventory/item-journals/post/{id}(id=${journal.id})}" method="post"
+                style="display:inline;" th:attr="data-confirm=#{ij.post.msg}">
+                <button type="submit" class="bc-ribbon-btn bc-primary">
+                    <i class="bi bi-check-circle"></i> <span th:text="#{common.post}">Post</span>
+                </button>
+            </form>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/inventory/item-journals" class="bc-ribbon-btn">
+                <i class="bi bi-arrow-left"></i> <span th:text="#{common.back.list}">Back</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header" style="padding:20px 24px;">
+                <div>
+                    <div style="font-size:12px;color:var(--bc-text-secondary);text-transform:uppercase;"
+                        th:text="#{nav.inventory.item.journal}"></div>
+                    <h1 style="margin:2px 0 0;font-size:22px;" th:text="${journal.documentNo}"></h1>
+                </div>
+                <span class="bc-badge"
+                    th:classappend="${journal.status == 'POSTED'} ? 'bc-badge-success' : 'bc-badge-secondary'"
+                    th:text="${journal.status}"></span>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 24px;margin-top:16px;">
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header"><span th:text="#{common.description}">Info</span></div>
+                <div class="bc-card-body">
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.date}">Date</div>
+                        <div class="bc-info-value" th:text="${#temporals.format(journal.journalDate, 'dd MMMM yyyy')}">
+                        </div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{ij.field.reason}">Reason</div>
+                        <div class="bc-info-value" th:text="${journal.reason}"></div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.store}">Store</div>
+                        <div class="bc-info-value" th:text="${journal.storeName}"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header"><span th:text="#{common.status}">Status</span></div>
+                <div class="bc-card-body">
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.created}">Created</div>
+                        <div class="bc-info-value" th:text="${journal.createdAt != null} ?
+                                  ${#temporals.format(journal.createdAt, 'dd MMM yyyy HH:mm')} : '-'"></div>
+                    </div>
+                    <div class="bc-info-row" th:if="${journal.postedAt != null}">
+                        <div class="bc-info-label" th:text="#{status.posted}">Posted</div>
+                        <div class="bc-info-value"
+                            th:text="${#temporals.format(journal.postedAt, 'dd MMM yyyy HH:mm')}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header">
+                <span th:text="#{common.item.lines}">Item Lines</span>
+            </div>
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th th:text="#{items.field.code}">Code</th>
+                        <th th:text="#{items.field.name}">Name</th>
+                        <th style="text-align:right;" th:text="#{ij.field.qty}">Qty (ML) +/-</th>
+                        <th style="text-align:right;" th:text="#{common.unit.cost}">Unit Cost</th>
+                        <th style="text-align:right;" th:text="#{common.subtotal.per.line}">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="it, stat : ${journal.items}">
+                        <td th:text="${stat.count}"></td>
+                        <td><strong th:text="${it.itemCode}"></strong></td>
+                        <td th:text="${it.itemName}"></td>
+                        <td style="text-align:right;"
+                            th:styleappend="${it.qtyMlAdjustment > 0} ? 'color:var(--bc-success);' : 'color:var(--bc-danger);'"
+                            th:text="${#numbers.formatDecimal(it.qtyMlAdjustment, 0, 'COMMA', 3, 'POINT')}"></td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(it.unitCost, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(it.totalCost, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </th:block>
+</body>
+
+</html>

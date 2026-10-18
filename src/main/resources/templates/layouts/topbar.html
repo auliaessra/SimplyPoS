@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+    <header th:fragment="topbar" class="bc-topbar">
+
+        <!-- Toggle sidebar (mobile: drawer, desktop: collapse) -->
+        <button class="bc-topbar-btn" id="sidebarToggle" title="Toggle Menu" aria-label="Toggle menu">
+            <i class="bi bi-list" style="font-size:20px;"></i>
+        </button>
+
+        <!-- Search -->
+        <div class="bc-search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Cari..." aria-label="Cari">
+        </div>
+
+        <!-- Store context (tablet+) -->
+        <div class="bc-company-badge d-none d-md-flex">
+            <i class="bi bi-shop"></i>
+            <span>Store: Pusat</span>
+        </div>
+
+        <!-- Right side -->
+        <div class="bc-topbar-right">
+            <!-- ============ LANGUAGE SWITCHER ============ -->
+            <div class="dropdown">
+                <button class="bc-topbar-btn d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false"
+                    th:title="#{nav.language}" style="width:auto;padding:0 8px;gap:6px;">
+                    <i class="bi bi-translate" style="font-size:16px;"></i>
+                    <span class="d-none d-md-inline" style="font-size:12px;font-weight:600;"
+                        th:text="${#locale.language == 'en' ? 'EN' : 'ID'}">
+                        ID
+                    </span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="font-size:13px;min-width:160px;">
+                    <li>
+                        <h6 class="dropdown-header" th:text="#{nav.language}">Language</h6>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center" th:href="@{/locale/set/id}"
+                            th:classappend="${#locale.language == 'id' or #locale.language == ''} ? 'active'">
+                            <span style="font-size:16px;margin-right:8px;">🇮🇩</span>
+                            <span>Bahasa Indonesia</span>
+                            <i class="bi bi-check2 ms-auto"
+                                th:if="${#locale.language == 'id' or #locale.language == ''}"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center" th:href="@{/locale/set/en}"
+                            th:classappend="${#locale.language == 'en'} ? 'active'">
+                            <span style="font-size:16px;margin-right:8px;">🇬🇧</span>
+                            <span>English</span>
+                            <i class="bi bi-check2 ms-auto" th:if="${#locale.language == 'en'}"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Notifikasi -->
+            <button class="bc-topbar-btn d-none d-sm-flex" th:title="#{nav.notifications}">
+                <i class="bi bi-bell" style="font-size:16px;"></i>
+            </button>
+
+            <!-- ============ THEME TOGGLE ============ -->
+            <button class="bc-topbar-btn theme-toggle-btn" id="themeToggle" title="Toggle Dark Mode"
+                aria-label="Toggle Dark Mode">
+                <!-- Icon light: sun -->
+                <i class="bi bi-sun-fill theme-icon-light" style="font-size:16px; display:none;"></i>
+                <!-- Icon dark: moon -->
+                <i class="bi bi-moon-stars-fill theme-icon-dark" style="font-size:16px; display:none;"></i>
+            </button>
+
+            <!-- Bantuan -->
+            <button class="bc-topbar-btn d-none d-md-flex" th:title="#{nav.help}">
+                <i class="bi bi-question-circle" style="font-size:16px;"></i>
+            </button>
+
+            <!-- User dropdown -->
+            <div class="dropdown">
+                <div class="bc-user-badge" data-bs-toggle="dropdown" aria-expanded="false" role="button">
+                    <div class="bc-avatar" th:text="${#authentication != null and #authentication.name != null ?
+                              #strings.substring(#authentication.name, 0, 2).toUpperCase() : 'U'}">
+                        SA
+                    </div>
+                    <div class="d-none d-md-block">
+                        <div style="font-size:12px;font-weight:600;line-height:1.2;"
+                            th:text="${#authentication != null and #authentication.name != null ? #authentication.name : 'User'}">
+                            Super Admin
+                        </div>
+                        <div style="font-size:11px;color:var(--bc-text-secondary);">
+                            User
+                        </div>
+                    </div>
+                    <i class="bi bi-chevron-down d-none d-md-inline"
+                        style="font-size:10px;color:var(--bc-text-muted);"></i>
+                </div>
+                <ul class="dropdown-menu dropdown-menu-end" style="font-size:13px;">
+                    <li>
+                        <a class="dropdown-item" th:href="@{/web/profile}">
+                            <i class="bi bi-person me-2"></i>
+                            <span th:text="#{nav.profile}">Profil Saya</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" th:href="@{/web/settings}">
+                            <i class="bi bi-gear me-2"></i>
+                            <span th:text="#{nav.settings}">Pengaturan</span>
+                        </a>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li>
+                        <form th:action="@{/logout}" method="post" class="m-0">
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                <span th:text="#{nav.logout}">Logout</span>
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+</body>
+
+</html>

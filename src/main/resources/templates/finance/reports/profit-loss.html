@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{nav.finance.profit.loss}">P&L</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span th:text="#{common.print}">Print</span>
+            </button>
+            <a href="/web/finance/reports/trial-balance" class="bc-ribbon-btn">
+                <i class="bi bi-table"></i>
+                <span th:text="#{nav.finance.trial.balance}">Trial Balance</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
+                <i class="bi bi-funnel"></i>
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+                <input type="date" name="from" th:value="${from}" class="bc-input" style="max-width:160px;">
+                <span>→</span>
+                <input type="date" name="to" th:value="${to}" class="bc-input" style="max-width:160px;">
+                <button type="submit" class="bc-btn bc-btn-primary bc-btn-sm">
+                    <i class="bi bi-search"></i> <span th:text="#{common.filter}">Filter</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header" style="padding:16px;">
+                <span th:text="#{nav.finance.profit.loss}">Profit & Loss</span>
+                <span style="font-size:12px;color:var(--bc-text-secondary);">
+                    <span th:text="${#temporals.format(report.from, 'dd MMM yyyy')}"></span> →
+                    <span th:text="${#temporals.format(report.to, 'dd MMM yyyy')}"></span>
+                </span>
+            </div>
+            <table class="bc-table">
+                <tbody>
+                    <!-- REVENUE -->
+                    <tr style="background:var(--bc-bg-sidebar);font-weight:700;">
+                        <td colspan="2" th:text="#{pl.revenue}">REVENUE</td>
+                    </tr>
+                    <tr th:each="r : ${report.revenues}">
+                        <td style="padding-left:32px;">
+                            <strong th:text="${r.accountCode}"></strong> – <span th:text="${r.accountName}"></span>
+                        </td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(r.amount, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                    <tr style="font-weight:600;border-top:1px solid var(--bc-border);">
+                        <td style="text-align:right;" th:text="#{pl.total.revenue}">Total Revenue</td>
+                        <td style="text-align:right;color:var(--bc-success);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(report.totalRevenue, 0, 'COMMA', 2, 'POINT')}">
+                        </td>
+                    </tr>
+
+                    <!-- EXPENSE -->
+                    <tr style="background:var(--bc-bg-sidebar);font-weight:700;">
+                        <td colspan="2" th:text="#{pl.expense}">EXPENSE</td>
+                    </tr>
+                    <tr th:each="e : ${report.expenses}">
+                        <td style="padding-left:32px;">
+                            <strong th:text="${e.accountCode}"></strong> – <span th:text="${e.accountName}"></span>
+                        </td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(e.amount, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                    <tr style="font-weight:600;border-top:1px solid var(--bc-border);">
+                        <td style="text-align:right;" th:text="#{pl.total.expense}">Total Expense</td>
+                        <td style="text-align:right;color:var(--bc-danger);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(report.totalExpense, 0, 'COMMA', 2, 'POINT')}">
+                        </td>
+                    </tr>
+
+                    <!-- NET PROFIT -->
+                    <tr style="background:var(--bc-primary);color:#fff;font-weight:700;font-size:15px;">
+                        <td style="text-align:right;" th:text="#{pl.net.profit}">NET PROFIT / (LOSS)</td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(report.netProfit, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </th:block>
+</body>
+
+</html>

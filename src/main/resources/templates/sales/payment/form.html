@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{cp.new}">New Customer Payment</title>
+</head>
+
+<body>
+
+    <!-- =========================================================
+     RIBBON
+     ========================================================= -->
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="cpForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i>
+                <span th:text="#{common.post}">Post Payment</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/sales/customer-payments" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i>
+                <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <!-- =========================================================
+     CONTENT
+     ========================================================= -->
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="cpForm" th:action="@{/web/sales/customer-payments/create}" th:object="${payment}" method="post">
+
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-cash-stack" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{cp.title}">Customer Payment</span>
+                    </span>
+                    <span class="bc-badge bc-badge-secondary">NEW</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <!-- ========== STORE (SUPER_ADMIN only) ========== -->
+                    <div th:if="${isSuperAdmin}" style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{common.store}">Store</label>
+                            <select th:field="*{storeId}" id="storeSelect" class="bc-select">
+                                <option value="" th:text="#{common.select.store}">Select Store</option>
+                                <option th:each="s : ${stores}" th:value="${s.id}"
+                                    th:text="${s.code} + ' - ' + ${s.name}"></option>
+                            </select>
+                        </div>
+                        <div></div>
+                    </div>
+
+                    <!-- ========== CUSTOMER & SALES ORDER ========== -->
+                    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+
+                        <!-- Customer -->
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{so.field.customer}">Customer</label>
+                            <select id="customerSelect" class="bc-select" required>
+                                <option value="" th:text="#{common.select.customer}">Select Customer</option>
+                                <option th:each="c : ${customers}" th:value="${c.id}"
+                                    th:text="${c.code} + ' - ' + ${c.name}"
+                                    th:selected="${preSelectedCustomerId != null and preSelectedCustomerId == c.id}"
+                                    th:attr="data-store-id=${c.storeId}"></option>
+                            </select>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);">
+                                <i class="bi bi-info-circle"></i>
+                                <span th:text="#{cp.customer.hint}">
+                                    Pilih customer untuk melihat SO kredit outstanding
+                                </span>
+                            </small>
+                        </div>
+
+                        <!-- Sales Order (searchable dropdown) -->
+                        <div class="bc-form-group">
+                            <label class="bc-label required">
+                                <span th:text="#{cp.field.sales.order}">Sales Order (Credit)</span>
+                                <span class="bc-badge bc-badge-danger" style="margin-left:6px;font-size:10px;"
+                                    th:text="#{vp.field.pi.required}">Wajib</span>
+                            </label>
+
+                            <div style="position:relative;">
+                                <input type="text" id="soSearchInput" class="bc-input"
+                                    th:placeholder="#{common.select.customer}" autocomplete="off" disabled
+                                    style="padding-left:34px;">
+
+                                <i class="bi bi-search" style="position:absolute;left:10px;top:50%;
+                                      transform:translateY(-50%);
+                                      color:var(--bc-text-muted);font-size:13px;
+                                      pointer-events:none;"></i>
+
+                                <i class="bi bi-chevron-down" id="soDropdownToggle" style="position:absolute;right:10px;top:50%;
+                                      transform:translateY(-50%);
+                                      color:var(--bc-text-muted);font-size:12px;
+                                      cursor:pointer;"></i>
+
+                                <!-- Hidden field untuk binding -->
+                                <input type="hidden" th:field="*{salesOrderId}" id="soIdHidden" required>
+
+                                <!-- Dropdown -->
+                                <div id="soDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
+                                        background:#fff;border:1px solid var(--bc-border-strong);
+                                        border-radius:4px;box-shadow:var(--bc-shadow-2);
+                                        max-height:320px;overflow-y:auto;z-index:100;
+                                        margin-top:4px;">
+                                    <div id="soDropdownLoading" style="display:none;padding:16px;text-align:center;
+                                            color:var(--bc-text-muted);font-size:12px;">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                        <span th:text="#{common.loading}">Loading...</span>
+                                    </div>
+                                    <div id="soDropdownEmpty" style="display:none;padding:16px;text-align:center;
+                                            color:var(--bc-text-muted);font-size:12px;">
+                                        <i class="bi bi-inbox" style="font-size:24px;display:block;
+                                                                  margin-bottom:8px;"></i>
+                                        <span id="soDropdownEmptyMsg" th:text="#{common.no.data}">No outstanding
+                                            SO</span>
+                                    </div>
+                                    <div id="soDropdownList"></div>
+                                </div>
+                            </div>
+
+                            <small style="font-size:11px;color:var(--bc-text-secondary);">
+                                <i class="bi bi-info-circle"></i>
+                                <span th:text="#{cp.so.hint}">
+                                    Hanya SO dengan metode CREDIT yang belum lunas
+                                </span>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- ========== SO DETAIL CARD ========== -->
+                    <div id="soDetailCard" style="display:none;margin:16px 0;padding:12px 16px;
+                            background:rgba(0,120,212,.06);
+                            border-left:3px solid var(--bc-primary);
+                            border-radius:4px;">
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;"
+                                    th:text="#{so.field.order.number}">No. Order</div>
+                                <div style="font-weight:600;color:var(--bc-primary);
+                                        font-size:14px;margin-top:2px;" id="soDetailNo">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;"
+                                    th:text="#{so.field.order.date}">Tanggal</div>
+                                <div style="font-weight:600;font-size:14px;margin-top:2px;" id="soDetailDate">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;" th:text="#{common.total}">Total
+                                </div>
+                                <div style="font-weight:600;font-size:14px;margin-top:2px;" id="soDetailTotal">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-danger);
+                                        text-transform:uppercase;letter-spacing:.3px;"
+                                    th:text="#{pi.field.outstanding}">Sisa Piutang</div>
+                                <div style="font-weight:700;color:var(--bc-danger);
+                                        font-size:16px;margin-top:2px;" id="soDetailOutstanding">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== PAYMENT DETAIL ========== -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;
+                            margin-top:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{cp.field.payment.date}">Payment Date</label>
+                            <input type="date" th:field="*{paymentDate}" class="bc-input" required>
+                        </div>
+
+                        <div class="bc-form-group">
+                            <label class="bc-label required">
+                                <span th:text="#{cp.field.amount}">Amount (Rp)</span>
+                                <span id="amountHint" style="font-size:11px;font-weight:normal;
+                                         color:var(--bc-text-secondary);margin-left:6px;">
+                                </span>
+                            </label>
+                            <div style="position:relative;">
+                                <span style="position:absolute;left:10px;top:50%;
+                                         transform:translateY(-50%);
+                                         color:var(--bc-text-secondary);font-size:12px;">
+                                    <span th:text="#{common.currency.prefix}">Rp</span>
+                                </span>
+                                <input type="number" step="0.01" min="0.01" th:field="*{amount}" id="amountInput"
+                                    class="bc-input" style="padding-left:36px;text-align:right;" required>
+                            </div>
+                            <div id="amountWarning" style="display:none;font-size:11px;color:var(--bc-danger);
+                                    margin-top:4px;">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span id="amountWarningMsg"></span>
+                            </div>
+                        </div>
+
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{so.field.payment.method}">Method</label>
+                            <select th:field="*{paymentMethod}" id="methodSelect" class="bc-select">
+                                <option value="CASH" th:text="#{payment.cash}">CASH</option>
+                                <option value="TRANSFER" th:text="#{payment.transfer}">TRANSFER</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bc-form-group" id="bankGroup" style="display:none;">
+                        <label class="bc-label" th:text="#{vp.field.bank.account}">Bank / Account</label>
+                        <input type="text" th:field="*{bankAccount}" class="bc-input">
+                    </div>
+
+                    <div class="bc-form-group">
+                        <label class="bc-label" th:text="#{common.notes}">Notes</label>
+                        <textarea th:field="*{notes}" class="bc-textarea" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="bc-card-body"
+                    style="border-top:1px solid var(--bc-border);background:var(--bc-bg-sidebar);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;display:flex;
+                            justify-content:space-between;align-items:center;">
+                        <div style="display:flex;gap:8px;">
+                            <button type="submit" class="bc-btn bc-btn-primary">
+                                <i class="bi bi-check-lg"></i>
+                                <span th:text="#{common.post}">Post Payment</span>
+                            </button>
+                            <a href="/web/sales/customer-payments" class="bc-btn bc-btn-default">
+                                <i class="bi bi-x-lg"></i>
+                                <span th:text="#{common.cancel}">Cancel</span>
+                            </a>
+                        </div>
+                        <div style="font-size:12px;color:var(--bc-text-secondary);">
+                            <i class="bi bi-shield-check"></i>
+                            <span th:text="#{info.vp.will.post}">Payment will reduce AR and post GL.</span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+
+    <!-- =========================================================
+     SCRIPTS
+     ========================================================= -->
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            // ============================================================
+            // i18n
+            // ============================================================
+            const I18N = {
+                selectSO:      /*[[#{cp.field.sales.order}]]*/ 'Select Sales Order',
+                loading:       /*[[#{common.loading}]]*/ 'Loading...',
+                noData:        /*[[#{common.no.data}]]*/ 'No outstanding SO',
+                selectCustomer: /*[[#{common.select.customer}]]*/ 'Select Customer',
+                clickToSelect: /*[[#{cp.field.sales.order}]]*/ 'Click to select',
+                outstanding:   /*[[#{pi.field.outstanding}]]*/ 'Outstanding',
+                currencyPrefix: /*[[#{common.currency.prefix}]]*/ 'Rp',
+                amountExceeds: /*[[#{error.amount.exceeds}]]*/ 'Amount exceeds outstanding',
+                soRequired:    /*[[#{error.pi.required}]]*/ 'Sales Order is required',
+                customerRequired: /*[[#{error.customer.required}]]*/ 'Customer is required',
+                locale:        /*[[${#locale.language}]]*/ 'id',
+                preSelectedSoId: /*[[${preSelectedSoId}]]*/ null,
+                preSelectedCustomerId: /*[[${preSelectedCustomerId}]]*/ null
+            };
+
+            document.addEventListener('DOMContentLoaded', function () {
+
+                // ========== ELEMEN ==========
+                const storeSelect = document.getElementById('storeSelect');
+                const customerSelect = document.getElementById('customerSelect');
+                const soSearchInput = document.getElementById('soSearchInput');
+                const soDropdown = document.getElementById('soDropdown');
+                const soDropdownList = document.getElementById('soDropdownList');
+                const soDropdownLoading = document.getElementById('soDropdownLoading');
+                const soDropdownEmpty = document.getElementById('soDropdownEmpty');
+                const soDropdownEmptyMsg = document.getElementById('soDropdownEmptyMsg');
+                const soDropdownToggle = document.getElementById('soDropdownToggle');
+                const soIdHidden = document.getElementById('soIdHidden');
+                const soDetailCard = document.getElementById('soDetailCard');
+
+                const amountInput = document.getElementById('amountInput');
+                const amountHint = document.getElementById('amountHint');
+                const amountWarning = document.getElementById('amountWarning');
+                const amountWarningMsg = document.getElementById('amountWarningMsg');
+                const methodSelect = document.getElementById('methodSelect');
+                const bankGroup = document.getElementById('bankGroup');
+
+                // ========== STATE ==========
+                let openSOs = [];
+                let filteredSOs = [];
+                let selectedSO = null;
+                let outstandingAmount = 0;
+
+                // ========== 1. TOGGLE BANK ==========
+                function toggleBank() {
+                    bankGroup.style.display =
+                        (methodSelect.value === 'TRANSFER') ? 'block' : 'none';
+                }
+                methodSelect.addEventListener('change', toggleBank);
+                toggleBank();
+
+                // ========== 2. CUSTOMER CHANGE → LOAD SO ==========
+                customerSelect.addEventListener('change', function () {
+                    const customerId = this.value;
+                    resetSODropdown();
+
+                    if (!customerId) {
+                        soSearchInput.disabled = true;
+                        soSearchInput.placeholder = I18N.selectCustomer;
+                        return;
+                    }
+
+                    soSearchInput.disabled = false;
+                    soSearchInput.placeholder = I18N.clickToSelect;
+                    loadOpenSOs(customerId);
+                });
+
+                // ========== 3. FILTER CUSTOMER BY STORE (SA) ==========
+                if (storeSelect) {
+                    storeSelect.addEventListener('change', function () {
+                        const storeId = this.value;
+                        const options = customerSelect.querySelectorAll('option');
+
+                        options.forEach(opt => {
+                            if (!opt.value) return;
+                            const custStoreId = opt.getAttribute('data-store-id');
+                            opt.style.display = (!storeId || custStoreId === storeId) ? '' : 'none';
+                        });
+
+                        customerSelect.value = '';
+                        resetSODropdown();
+                    });
+                }
+
+                // ========== 4. FETCH SO OUTSTANDING ==========
+                async function loadOpenSOs(customerId) {
+                    soDropdownLoading.style.display = 'block';
+                    soDropdownEmpty.style.display = 'none';
+                    soDropdownList.innerHTML = '';
+                    soDropdown.style.display = 'block';
+
+                    try {
+                        const storeId = storeSelect ? storeSelect.value : null;
+                        let url = `/web/sales/open?customerId=${encodeURIComponent(customerId)}`;
+                        if (storeId) url += `&storeId=${encodeURIComponent(storeId)}`;
+
+                        const res = await fetch(url, {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        });
+
+                        if (res.status === 401) {
+                            alert('Sesi Anda telah berakhir');
+                            window.location.href = '/login?expired';
+                            return;
+                        }
+
+                        if (!res.ok) {
+                            let msg = 'HTTP ' + res.status;
+                            try {
+                                const err = await res.json();
+                                msg = err.message || msg;
+                            } catch (e) { }
+                            throw new Error(msg);
+                        }
+
+                        const data = await res.json();
+                        openSOs = data || [];
+                        filteredSOs = [...openSOs];
+                        renderSODropdown();
+
+                        if (openSOs.length === 0) {
+                            soDropdownEmpty.style.display = 'block';
+                            soDropdownEmptyMsg.textContent = I18N.noData;
+                            soSearchInput.placeholder = I18N.noData;
+                        } else {
+                            soSearchInput.placeholder =
+                                `${openSOs.length} SO — ${I18N.clickToSelect}`;
+
+                            // Auto-select jika ada preSelectedSoId
+                            if (I18N.preSelectedSoId) {
+                                const target = openSOs.find(s => s.id === I18N.preSelectedSoId);
+                                if (target) selectSO(target);
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Failed to load SO:', err);
+                        soDropdownList.innerHTML = `
+                    <div style="padding:16px;text-align:center;
+                                color:var(--bc-danger);font-size:12px;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        ${escapeHtml(err.message)}
+                    </div>`;
+                    } finally {
+                        soDropdownLoading.style.display = 'none';
+                    }
+                }
+
+                // ========== 5. RENDER DROPDOWN ==========
+                function renderSODropdown() {
+                    if (filteredSOs.length === 0) {
+                        soDropdownList.innerHTML = '';
+                        if (openSOs.length > 0) {
+                            soDropdownEmptyMsg.textContent = I18N.noData;
+                            soDropdownEmpty.style.display = 'block';
+                        }
+                        return;
+                    }
+
+                    soDropdownEmpty.style.display = 'none';
+                    soDropdownList.innerHTML = filteredSOs.map((so, idx) => {
+                        const total = parseFloat(so.totalAmount) || 0;
+                        const paid = parseFloat(so.paidAmount) || 0;
+                        const outstanding = total - paid;
+
+                        return `
+                    <div class="so-option" data-index="${idx}"
+                         style="padding:10px 14px;cursor:pointer;
+                                border-bottom:1px solid var(--bc-border);
+                                transition:background .15s;">
+                        <div style="display:flex;justify-content:space-between;
+                                    align-items:center;gap:12px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;
+                                            color:var(--bc-primary);font-size:13px;">
+                                    ${escapeHtml(so.orderNo)}
+                                </div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                            margin-top:2px;">
+                                    ${formatDate(so.orderDate)}
+                                </div>
+                            </div>
+                            <div style="text-align:right;flex-shrink:0;">
+                                <div style="font-size:10px;color:var(--bc-text-muted);
+                                            text-transform:uppercase;">
+                                    ${I18N.outstanding}
+                                </div>
+                                <div style="font-weight:700;
+                                            color:var(--bc-danger);font-size:13px;">
+                                    ${I18N.currencyPrefix} ${formatNumber(outstanding)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                    }).join('');
+
+                    soDropdownList.querySelectorAll('.so-option').forEach(el => {
+                        el.addEventListener('mouseenter', () => el.style.background = 'var(--bc-bg-app)');
+                        el.addEventListener('mouseleave', () => el.style.background = '');
+                        el.addEventListener('click', () => {
+                            const idx = parseInt(el.getAttribute('data-index'));
+                            selectSO(filteredSOs[idx]);
+                        });
+                    });
+                }
+
+                // ========== 6. SELECT SO ==========
+                function selectSO(so) {
+                    selectedSO = so;
+                    const total = parseFloat(so.totalAmount) || 0;
+                    const paid = parseFloat(so.paidAmount) || 0;
+                    outstandingAmount = total - paid;
+
+                    soIdHidden.value = so.id;
+                    soSearchInput.value = so.orderNo;
+
+                    closeSODropdown();
+
+                    soDetailCard.style.display = 'block';
+                    document.getElementById('soDetailNo').textContent = so.orderNo;
+                    document.getElementById('soDetailDate').textContent = formatDate(so.orderDate);
+                    document.getElementById('soDetailTotal').textContent =
+                        I18N.currencyPrefix + ' ' + formatNumber(total);
+                    document.getElementById('soDetailOutstanding').textContent =
+                        I18N.currencyPrefix + ' ' + formatNumber(outstandingAmount);
+
+                    if (!amountInput.value) {
+                        amountInput.value = outstandingAmount.toFixed(2);
+                    }
+
+                    amountHint.textContent =
+                        `(maks: ${I18N.currencyPrefix} ${formatNumber(outstandingAmount)})`;
+                    validateAmount();
+
+                    setTimeout(() => amountInput.focus(), 100);
+                }
+
+                // ========== 7. RESET ==========
+                function resetSODropdown() {
+                    openSOs = [];
+                    filteredSOs = [];
+                    selectedSO = null;
+                    outstandingAmount = 0;
+
+                    soSearchInput.value = '';
+                    soIdHidden.value = '';
+                    soDropdownList.innerHTML = '';
+                    soDropdown.style.display = 'none';
+                    soDetailCard.style.display = 'none';
+                    amountHint.textContent = '';
+                    amountWarning.style.display = 'none';
+                }
+
+                // ========== 8. TOGGLE DROPDOWN ==========
+                soSearchInput.addEventListener('focus', function () {
+                    if (this.disabled) return;
+                    if (openSOs.length > 0) soDropdown.style.display = 'block';
+                });
+
+                soDropdownToggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    if (soSearchInput.disabled) return;
+                    if (soDropdown.style.display === 'block') {
+                        closeSODropdown();
+                    } else if (openSOs.length > 0) {
+                        soDropdown.style.display = 'block';
+                        soSearchInput.focus();
+                    }
+                });
+
+                // ========== 9. SEARCH / FILTER ==========
+                soSearchInput.addEventListener('input', function () {
+                    const q = this.value.toLowerCase().trim();
+
+                    if (selectedSO) {
+                        soIdHidden.value = '';
+                        selectedSO = null;
+                        soDetailCard.style.display = 'none';
+                        amountHint.textContent = '';
+                    }
+
+                    if (!q) {
+                        filteredSOs = [...openSOs];
+                    } else {
+                        filteredSOs = openSOs.filter(so =>
+                            (so.orderNo || '').toLowerCase().includes(q)
+                        );
+                    }
+
+                    renderSODropdown();
+                    soDropdown.style.display = 'block';
+                });
+
+                // ========== 10. CLOSE ON OUTSIDE CLICK ==========
+                document.addEventListener('click', function (e) {
+                    if (!soDropdown.contains(e.target) &&
+                        e.target !== soSearchInput &&
+                        e.target !== soDropdownToggle) {
+                        closeSODropdown();
+                    }
+                });
+
+                function closeSODropdown() {
+                    soDropdown.style.display = 'none';
+                }
+
+                // ========== 11. VALIDATE AMOUNT ==========
+                amountInput.addEventListener('input', validateAmount);
+
+                function validateAmount() {
+                    const value = parseFloat(amountInput.value) || 0;
+                    amountWarning.style.display = 'none';
+
+                    if (value <= 0) return;
+
+                    if (outstandingAmount > 0 && value > outstandingAmount) {
+                        amountWarning.style.display = 'block';
+                        amountWarningMsg.textContent =
+                            `${I18N.amountExceeds} (${I18N.currencyPrefix} ${formatNumber(outstandingAmount)})`;
+                    }
+                }
+
+                // ========== 12. VALIDATE SUBMIT ==========
+                document.getElementById('cpForm').addEventListener('submit', function (e) {
+                    const errors = [];
+
+                    if (!customerSelect.value) errors.push(I18N.customerRequired);
+                    if (!soIdHidden.value) errors.push(I18N.soRequired);
+
+                    const amt = parseFloat(amountInput.value) || 0;
+                    if (amt <= 0) errors.push('Jumlah harus > 0');
+
+                    if (outstandingAmount > 0 && amt > outstandingAmount) {
+                        errors.push(I18N.amountExceeds);
+                    }
+
+                    if (errors.length > 0) {
+                        e.preventDefault();
+                        alert('Validasi gagal:\n\n• ' + errors.join('\n• '));
+                    }
+                });
+
+                // ========== HELPERS ==========
+                function formatNumber(n) {
+                    if (n === null || n === undefined) return '0';
+                    return parseFloat(n).toLocaleString(
+                        I18N.locale === 'en' ? 'en-US' : 'id-ID',
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+
+                function formatDate(dateStr) {
+                    if (!dateStr) return '-';
+                    try {
+                        const d = new Date(dateStr);
+                        return d.toLocaleDateString(
+                            I18N.locale === 'en' ? 'en-US' : 'id-ID',
+                            { day: '2-digit', month: 'short', year: 'numeric' });
+                    } catch (e) {
+                        return dateStr;
+                    }
+                }
+
+                function escapeHtml(s) {
+                    if (!s) return '';
+                    return String(s)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                }
+
+                // ========== INIT: Auto-load jika pre-selected ==========
+                if (I18N.preSelectedCustomerId && customerSelect) {
+                    customerSelect.value = I18N.preSelectedCustomerId;
+                    customerSelect.dispatchEvent(new Event('change'));
+                }
+            });
+        </script>
+    </th:block>
+
+</body>
+
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{nav.reports.sales}">Sales Report</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span th:text="#{common.print}">Print</span>
+            </button>
+            <button type="button" class="bc-ribbon-btn" onclick="exportCsv()">
+                <i class="bi bi-file-earmark-excel"></i> <span th:text="#{common.export}">Export</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/reports/purchase" class="bc-ribbon-btn">
+                <i class="bi bi-cart-check"></i>
+                <span th:text="#{nav.reports.purchase}">Purchase Report</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <!-- Filter -->
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
+                <i class="bi bi-funnel"></i>
+
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+
+                <input type="date" name="from" th:value="${from}" class="bc-input" style="max-width:160px;">
+                <span>→</span>
+                <input type="date" name="to" th:value="${to}" class="bc-input" style="max-width:160px;">
+
+                <button type="submit" class="bc-btn bc-btn-primary bc-btn-sm">
+                    <i class="bi bi-search"></i> <span th:text="#{common.filter}">Filter</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Summary -->
+        <div class="bc-stats" style="padding:16px 24px 0;">
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon blue"><i class="bi bi-cash-coin"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(report.totalRevenue, 0, 'COMMA', 0, 'POINT')}">Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{sr.revenue}">Total Revenue</div>
+                </div>
+            </div>
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon orange"><i class="bi bi-bag"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(report.totalCogs, 0, 'COMMA', 0, 'POINT')}">Rp 0</div>
+                    <div class="bc-stat-label" th:text="#{sr.cogs}">Total COGS</div>
+                </div>
+            </div>
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon green"><i class="bi bi-trophy"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:styleappend="${report.totalProfit >= 0} ? 'color:var(--bc-success);' : 'color:var(--bc-danger);'"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(report.totalProfit, 0, 'COMMA', 0, 'POINT')}">Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{sr.profit}">Gross Profit</div>
+                </div>
+            </div>
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon blue"><i class="bi bi-receipt"></i></div>
+                <div>
+                    <div class="bc-stat-value" th:text="${report.totalTransactions}">0</div>
+                    <div class="bc-stat-label" th:text="#{sr.transactions}">Transactions</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="bc-card" style="margin:16px 24px 0;">
+            <div class="bc-card-header">
+                <span>
+                    <i class="bi bi-graph-up" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{sr.daily.chart}">Daily Sales</span>
+                </span>
+            </div>
+            <div class="bc-card-body" style="height:300px;">
+                <canvas id="salesDailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Products -->
+        <div class="bc-card" style="margin:16px 24px 24px;">
+            <div class="bc-card-header">
+                <span>
+                    <i class="bi bi-trophy" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{sr.top.products}">Top Products</span>
+                </span>
+            </div>
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;">#</th>
+                        <th style="width:130px;" th:text="#{items.field.code}">Code</th>
+                        <th th:text="#{items.field.name}">Name</th>
+                        <th style="width:160px;text-align:right;" th:text="#{ij.field.qty}">Qty (ML)</th>
+                        <th style="width:180px;text-align:right;" th:text="#{sr.revenue}">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p, stat : ${report.topProducts}">
+                        <td style="text-align:center;color:var(--bc-text-muted);" th:text="${stat.count}"></td>
+                        <td><strong style="color:var(--bc-primary);" th:text="${p.itemCode}"></strong></td>
+                        <td th:text="${p.itemName}"></td>
+                        <td style="text-align:right;"
+                            th:text="${#numbers.formatDecimal(p.qtyMl, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(p.revenue, 0, 'COMMA', 0, 'POINT')}"></td>
+                    </tr>
+                    <tr th:if="${report.topProducts.isEmpty()}">
+                        <td colspan="5">
+                            <div class="bc-empty">
+                                <i class="bi bi-inbox"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+
+    <th:block layout:fragment="scripts">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script th:inline="javascript">
+            const dailyData = /*[[${report.dailyChart}]]*/[];
+            const locale = /*[[${#locale.language}]]*/ 'id';
+
+            function fmt(n) {
+                return parseFloat(n || 0).toLocaleString(
+                    locale === 'en' ? 'en-US' : 'id-ID',
+                    { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+
+            if (document.getElementById('salesDailyChart') && dailyData.length > 0) {
+                new Chart(document.getElementById('salesDailyChart'), {
+                    type: 'line',
+                    data: {
+                        labels: dailyData.map(p => p.label),
+                        datasets: [{
+                            label: 'Sales',
+                            data: dailyData.map(p => p.value),
+                            borderColor: '#0078D4',
+                            backgroundColor: 'rgba(0,120,212,.15)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.35
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: c => 'Rp ' + fmt(c.parsed.y) } }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                            y: {
+                                beginAtZero: true, grid: { color: '#EDEBE9' },
+                                ticks: { font: { size: 10 }, callback: v => 'Rp ' + fmt(v) }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function exportCsv() {
+                alert('Export CSV coming soon');
+            }
+        </script>
+    </th:block>
+
+</body>
+
+</html>

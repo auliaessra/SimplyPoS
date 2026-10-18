@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="${pageTitle}">Store Price Form</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="storePriceForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/master/store-prices" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i>
+                <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="storePriceForm" th:action="${id != null}
+                          ? @{/web/master/store-prices/edit/{id}(id=${id})}
+                          : @{/web/master/store-prices/create}" th:object="${price}" method="post">
+
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-tags" style="color:var(--bc-primary);"></i>
+                        <span th:text="${id != null}
+                                   ? #{store.price.edit.title}
+                                   : #{store.price.new.title}">
+                            Harga Item
+                        </span>
+                    </span>
+                    <span class="bc-badge bc-badge-secondary" th:text="${id != null} ? 'EDIT' : 'NEW'">NEW</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <!-- ============ INFO (khusus EDIT) ============ -->
+                    <!-- ✅ GUARD: hanya render jika id DAN currentPrice benar-benar ada -->
+                    <div th:if="${id != null and currentPrice != null}" style="margin-bottom:20px;padding:12px 16px;
+                            background:rgba(0,120,212,.06);
+                            border-left:3px solid var(--bc-primary);
+                            border-radius:4px;">
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;" th:text="#{items.field.code}">
+                                    Kode Item</div>
+                                <div style="font-weight:600;color:var(--bc-primary);
+                                        font-size:14px;margin-top:2px;" th:text="${currentPrice?.itemCode} ?: '-'">-
+                                </div>
+                            </div>
+
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;" th:text="#{items.field.name}">
+                                    Nama Item</div>
+                                <div style="font-weight:600;font-size:14px;margin-top:2px;"
+                                    th:text="${currentPrice?.itemName} ?: '-'">-</div>
+                            </div>
+
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;"
+                                    th:text="#{store.price.field.stock}">Stok Saat Ini</div>
+                                <!-- ✅ SAFE NAVIGATION: currentPrice?.stockQtyMl -->
+                                <div style="font-weight:700;color:var(--bc-primary);
+                                        font-size:16px;margin-top:2px;"
+                                    th:with="stockVal=${currentPrice?.stockQtyMl != null ? currentPrice.stockQtyMl : 0}"
+                                    th:text="${#numbers.formatDecimal(stockVal, 0, 'COMMA', 2, 'POINT')} + ' ML'">
+                                    0 ML
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ============ ITEM & STORE ============ -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{store.price.field.item}">Item</label>
+                            <select th:field="*{itemId}" class="bc-select" th:disabled="${id != null}" required>
+                                <option value="" th:text="#{common.select.item}">Select Item</option>
+                                <option th:each="i : ${items}" th:value="${i.id}"
+                                    th:text="${i.code} + ' - ' + ${i.name}"></option>
+                            </select>
+                            <!-- Hidden input agar itemId tetap terkirim saat disabled -->
+                            <input th:if="${id != null}" type="hidden" th:field="*{itemId}" />
+                            <small th:if="${id != null}" style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{store.price.item.locked}">
+                                Item tidak dapat diubah saat edit
+                            </small>
+                        </div>
+
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{common.store}">Store</label>
+                            <select th:field="*{storeId}" class="bc-select" th:disabled="${id != null or !isSuperAdmin}"
+                                th:required="${id == null and isSuperAdmin}">
+                                <option value="" th:text="#{common.select.store}">Select Store</option>
+                                <option th:each="s : ${stores}" th:value="${s.id}"
+                                    th:text="${s.code} + ' - ' + ${s.name}"></option>
+                            </select>
+                            <input th:if="${id != null}" type="hidden" th:field="*{storeId}" />
+                            <small th:if="${id != null}" style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{store.price.store.locked}">
+                                Cabang tidak dapat diubah saat edit
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- ============ HARGA BELI / JUAL / MIN STOCK ============ -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;
+                            margin-top:12px;">
+
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{store.price.field.buy}">Harga Beli (per
+                                ML)</label>
+                            <div style="position:relative;">
+                                <span style="position:absolute;left:10px;top:50%;
+                                         transform:translateY(-50%);
+                                         color:var(--bc-text-secondary);font-size:12px;">
+                                    <span th:text="#{common.currency.prefix}">Rp</span>
+                                </span>
+                                <input type="number" step="0.01" min="0" th:field="*{buyPrice}" id="buyPriceInput"
+                                    class="bc-input" style="padding-left:36px;text-align:right;" required>
+                            </div>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{store.price.buy.hint}">
+                                Harga modal per ML (untuk HPP)
+                            </small>
+                        </div>
+
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{store.price.field.sell}">Harga Jual (per
+                                ML)</label>
+                            <div style="position:relative;">
+                                <span style="position:absolute;left:10px;top:50%;
+                                         transform:translateY(-50%);
+                                         color:var(--bc-text-secondary);font-size:12px;">
+                                    <span th:text="#{common.currency.prefix}">Rp</span>
+                                </span>
+                                <input type="number" step="0.01" min="0" th:field="*{sellPrice}" id="sellPriceInput"
+                                    class="bc-input" style="padding-left:36px;text-align:right;" required>
+                            </div>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{store.price.sell.hint}">
+                                Harga jual ke customer per ML
+                            </small>
+                        </div>
+
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{store.price.field.min}">Minimal Stok (ML)</label>
+                            <input type="number" step="0.001" min="0" th:field="*{minStockMl}" class="bc-input">
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{store.price.field.min.hint}">
+                                Alert dikirim jika stok &lt; nilai ini
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- ============ PREVIEW MARGIN ============ -->
+                    <div id="marginPreview" style="margin-top:16px;padding:12px 16px;
+                            background:var(--bc-bg-app);border-radius:4px;
+                            display:flex;gap:24px;flex-wrap:wrap;font-size:13px;">
+                        <div>
+                            <span style="color:var(--bc-text-secondary);">
+                                <span th:text="#{store.price.margin}">Margin</span>:
+                            </span>
+                            <strong id="marginValue" style="color:var(--bc-primary);">-</strong>
+                        </div>
+                        <div>
+                            <span style="color:var(--bc-text-secondary);">
+                                <span th:text="#{store.price.margin.percent}">Margin %</span>:
+                            </span>
+                            <strong id="marginPercent" style="color:var(--bc-success);">-</strong>
+                        </div>
+                    </div>
+
+                    <!-- ============ INFO STOCK ============ -->
+                    <div class="bc-alert bc-alert-info" style="margin:16px 0 0;">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <span th:text="#{store.price.stock.note}">
+                            Stok hanya dapat diubah melalui Purchase Invoice, Sales Order,
+                            atau Item Journal. Form ini hanya mengubah harga dan minimal stok.
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="bc-card-body" style="border-top:1px solid var(--bc-border);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                        <button type="submit" class="bc-btn bc-btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            <span th:text="#{common.save}">Simpan</span>
+                        </button>
+                        <a href="/web/master/store-prices" class="bc-btn bc-btn-default">
+                            <i class="bi bi-x-lg"></i>
+                            <span th:text="#{common.cancel}">Batal</span>
+                        </a>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="scripts">
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const buyInput = document.getElementById('buyPriceInput');
+                const sellInput = document.getElementById('sellPriceInput');
+                const marginValue = document.getElementById('marginValue');
+                const marginPercent = document.getElementById('marginPercent');
+
+                function updateMargin() {
+                    const buy = parseFloat(buyInput?.value) || 0;
+                    const sell = parseFloat(sellInput?.value) || 0;
+
+                    const margin = sell - buy;
+                    const percent = buy > 0 ? (margin / buy) * 100 : 0;
+
+                    if (marginValue) {
+                        marginValue.textContent = 'Rp ' + margin.toLocaleString('id-ID', {
+                            minimumFractionDigits: 2, maximumFractionDigits: 2
+                        });
+                    }
+                    if (marginPercent) {
+                        marginPercent.textContent = percent.toFixed(2) + '%';
+                        marginPercent.style.color = percent >= 0
+                            ? 'var(--bc-success)'
+                            : 'var(--bc-danger)';
+                    }
+
+                    // Warning jika harga jual < harga beli
+                    if (sell < buy && sell > 0 && buy > 0) {
+                        sellInput.style.borderColor = 'var(--bc-danger)';
+                        sellInput.style.boxShadow = '0 0 0 1px var(--bc-danger)';
+                    } else if (sellInput) {
+                        sellInput.style.borderColor = '';
+                        sellInput.style.boxShadow = '';
+                    }
+                }
+
+                if (buyInput && sellInput) {
+                    buyInput.addEventListener('input', updateMargin);
+                    sellInput.addEventListener('input', updateMargin);
+                    updateMargin();
+                }
+            });
+        </script>
+    </th:block>
+
+</body>
+
+</html>

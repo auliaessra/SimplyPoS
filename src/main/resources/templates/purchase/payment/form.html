@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{vp.new}">New Vendor Payment</title>
+</head>
+
+<body>
+
+    <!-- =========================================================
+     RIBBON
+     ========================================================= -->
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="vpForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i>
+                <span th:text="#{common.post}">Post Payment</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/purchase/vendor-payments" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i>
+                <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <!-- =========================================================
+     CONTENT
+     ========================================================= -->
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+
+            <form id="vpForm" th:action="@{/web/purchase/vendor-payments/create}" th:object="${payment}" method="post">
+
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-cash-coin" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{vp.title}">Vendor Payment</span>
+                    </span>
+                    <span class="bc-badge bc-badge-secondary">NEW</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <!-- ========== STORE (SUPER_ADMIN) ========== -->
+                    <div th:if="${isSuperAdmin}" style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{common.store}">Store</label>
+                            <select th:field="*{storeId}" id="storeSelect" class="bc-select">
+                                <option value="" th:text="#{common.select.store}">Select Store</option>
+                                <option th:each="s : ${stores}" th:value="${s.id}"
+                                    th:text="${s.code} + ' - ' + ${s.name}"></option>
+                            </select>
+                        </div>
+                        <div></div>
+                    </div>
+
+                    <!-- ========== VENDOR & PI ========== -->
+                    <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{po.field.vendor}">Vendor</label>
+                            <select th:field="*{vendorId}" id="vendorSelect" class="bc-select" required>
+                                <option value="" th:text="#{common.select.vendor}">Select Vendor</option>
+                                <option th:each="v : ${vendors}" th:value="${v.id}"
+                                    th:text="${v.code} + ' - ' + ${v.name}" th:attr="data-store-id=${v.storeId}">
+                                </option>
+                            </select>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);">
+                                <i class="bi bi-info-circle"></i>
+                                <span th:text="#{vp.field.pi.select.vendor}">Select vendor to see outstanding
+                                    invoices</span>
+                            </small>
+                        </div>
+
+                        <!-- Purchase Invoice (WAJIB) dengan search dropdown -->
+                        <div class="bc-form-group">
+                            <label class="bc-label required">
+                                <span th:text="#{vp.field.pi}">Purchase Invoice</span>
+                                <span class="bc-badge bc-badge-danger" style="margin-left:6px;font-size:10px;"
+                                    th:text="#{vp.field.pi.required}">REQUIRED</span>
+                            </label>
+
+                            <div style="position:relative;">
+                                <input type="text" id="piSearchInput" class="bc-input"
+                                    th:placeholder="#{vp.field.pi.select.vendor}" autocomplete="off" disabled
+                                    style="padding-left:34px;">
+
+                                <i class="bi bi-search" style="position:absolute;left:10px;top:50%;
+                                      transform:translateY(-50%);
+                                      color:var(--bc-text-muted);font-size:13px;
+                                      pointer-events:none;"></i>
+
+                                <i class="bi bi-chevron-down" id="piDropdownToggle" style="position:absolute;right:10px;top:50%;
+                                      transform:translateY(-50%);
+                                      color:var(--bc-text-muted);font-size:12px;
+                                      cursor:pointer;"></i>
+
+                                <!-- Hidden field untuk binding ke DTO -->
+                                <input type="hidden" th:field="*{purchaseInvoiceId}" id="piIdHidden" required>
+
+                                <!-- Dropdown list -->
+                                <div id="piDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
+                                        background:#fff;border:1px solid var(--bc-border-strong);
+                                        border-radius:4px;box-shadow:var(--bc-shadow-2);
+                                        max-height:320px;overflow-y:auto;z-index:100;
+                                        margin-top:4px;">
+                                    <div id="piDropdownLoading" style="display:none;padding:16px;text-align:center;
+                                            color:var(--bc-text-muted);font-size:12px;">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                        <span th:text="#{common.loading}">Loading...</span>
+                                    </div>
+                                    <div id="piDropdownEmpty" style="display:none;padding:16px;text-align:center;
+                                            color:var(--bc-text-muted);font-size:12px;">
+                                        <i class="bi bi-inbox" style="font-size:24px;display:block;
+                                                                  margin-bottom:8px;"></i>
+                                        <span id="piDropdownEmptyMsg" th:text="#{common.no.data}">No outstanding
+                                            invoice</span>
+                                    </div>
+                                    <div id="piDropdownList"></div>
+                                </div>
+                            </div>
+
+                            <small style="font-size:11px;color:var(--bc-text-secondary);margin-top:4px;
+                                      display:block;">
+                                <i class="bi bi-info-circle"></i>
+                                <span th:text="#{vp.field.pi.hint}">Only POSTED or PARTIAL_PAID PI will appear</span>
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- ========== PI DETAIL CARD ========== -->
+                    <div id="piDetailCard" style="display:none;margin:16px 0;padding:12px 16px;
+                            background:rgba(0,120,212,.06);
+                            border-left:3px solid var(--bc-primary);
+                            border-radius:4px;">
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;"
+                                    th:text="#{pi.field.invoice.number}">Invoice No</div>
+                                <div style="font-weight:600;color:var(--bc-primary);
+                                        font-size:14px;margin-top:2px;" id="piDetailNo">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;"
+                                    th:text="#{pi.field.invoice.date}">Date</div>
+                                <div style="font-weight:600;font-size:14px;margin-top:2px;" id="piDetailDate">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                        text-transform:uppercase;letter-spacing:.3px;" th:text="#{common.total}">Total
+                                    Invoice</div>
+                                <div style="font-weight:600;font-size:14px;margin-top:2px;" id="piDetailTotal">-</div>
+                            </div>
+                            <div>
+                                <div style="font-size:11px;color:var(--bc-danger);
+                                        text-transform:uppercase;letter-spacing:.3px;"
+                                    th:text="#{pi.field.outstanding}">Outstanding</div>
+                                <div style="font-weight:700;color:var(--bc-danger);
+                                        font-size:16px;margin-top:2px;" id="piDetailOutstanding">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== PAYMENT DETAIL ========== -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;
+                            margin-top:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{vp.field.payment.date}">Payment Date</label>
+                            <input type="date" th:field="*{paymentDate}" class="bc-input" required>
+                        </div>
+
+                        <div class="bc-form-group">
+                            <label class="bc-label required">
+                                <span th:text="#{vp.field.amount}">Amount (Rp)</span>
+                                <span id="amountHint" style="font-size:11px;font-weight:normal;
+                                         color:var(--bc-text-secondary);margin-left:6px;">
+                                </span>
+                            </label>
+                            <div style="position:relative;">
+                                <span style="position:absolute;left:10px;top:50%;
+                                         transform:translateY(-50%);
+                                         color:var(--bc-text-secondary);font-size:12px;">
+                                    <span th:text="#{common.currency.prefix}">Rp</span>
+                                </span>
+                                <input type="number" step="0.01" min="0.01" th:field="*{amount}" id="amountInput"
+                                    class="bc-input" style="padding-left:36px;text-align:right;" required>
+                            </div>
+                            <div id="amountWarning" style="display:none;font-size:11px;color:var(--bc-danger);
+                                    margin-top:4px;">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span id="amountWarningMsg"></span>
+                            </div>
+                        </div>
+
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{vp.field.method}">Method</label>
+                            <select th:field="*{paymentMethod}" id="methodSelect" class="bc-select">
+                                <option value="CASH" th:text="#{payment.cash}">CASH</option>
+                                <option value="TRANSFER" th:text="#{payment.transfer}">TRANSFER</option>
+                                <option value="GIRO" th:text="#{payment.giro}">GIRO</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- ========== BANK ACCOUNT ========== -->
+                    <div class="bc-form-group" id="bankAccountGroup" style="display:none;">
+                        <label class="bc-label" th:text="#{vp.field.bank.account}">Bank / Account</label>
+                        <input type="text" th:field="*{bankAccount}" class="bc-input" placeholder="BCA - 1234567890">
+                    </div>
+
+                    <!-- ========== NOTES ========== -->
+                    <div class="bc-form-group" style="margin-top:16px;">
+                        <label class="bc-label" th:text="#{common.notes}">Notes</label>
+                        <textarea th:field="*{notes}" class="bc-textarea" rows="2"></textarea>
+                    </div>
+
+                </div>
+
+                <!-- ========== FOOTER ========== -->
+                <div class="bc-card-body"
+                    style="border-top:1px solid var(--bc-border);background:var(--bc-bg-sidebar);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;display:flex;
+                            justify-content:space-between;align-items:center;">
+                        <div style="display:flex;gap:8px;">
+                            <button type="submit" class="bc-btn bc-btn-primary">
+                                <i class="bi bi-check-lg"></i>
+                                <span th:text="#{common.post}">Post Payment</span>
+                            </button>
+                            <a href="/web/purchase/vendor-payments" class="bc-btn bc-btn-default">
+                                <i class="bi bi-x-lg"></i>
+                                <span th:text="#{common.cancel}">Cancel</span>
+                            </a>
+                        </div>
+                        <div style="font-size:12px;color:var(--bc-text-secondary);">
+                            <i class="bi bi-shield-check"></i>
+                            <span th:text="#{info.vp.will.post}">Payment will reduce AP and post GL journal</span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+
+    <!-- =========================================================
+     SCRIPTS
+     ========================================================= -->
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            // ============================================================
+            // i18n Messages
+            // ============================================================
+            const I18N = {
+                searchPI:          /*[[#{common.search}]]*/ 'Search',
+                loading:           /*[[#{common.loading}]]*/ 'Loading...',
+                noData:            /*[[#{common.no.data}]]*/ 'No outstanding invoice',
+                selectVendor:      /*[[#{common.select.vendor}]]*/ 'Select Vendor',
+                clickToSelect:     /*[[#{vp.field.pi}]]*/ 'Click to select invoice',
+                outstanding:       /*[[#{pi.field.outstanding}]]*/ 'Outstanding',
+                dueDate:           /*[[#{pi.field.due.date}]]*/ 'Due Date',
+                loadFailed:        /*[[#{error.generic}]]*/ 'Failed to load',
+                sessionExpired:    /*[[#{login.session.expired}]]*/ 'Session expired',
+                currencyPrefix:    /*[[#{common.currency.prefix}]]*/ 'Rp',
+                maxAmount:         /*[[#{common.total}]]*/ 'Max',
+                amountExceeds:     /*[[#{error.amount.exceeds}]]*/ 'Amount exceeds outstanding',
+                vendorRequired:    /*[[#{error.vendor.required}]]*/ 'Vendor is required',
+                piRequired:        /*[[#{error.pi.required}]]*/ 'Purchase Invoice is required',
+                paymentDateReq:    /*[[#{vp.field.payment.date}]]*/ 'Payment date is required',
+                amountPositive:    /*[[#{error.amount.positive}]]*/ 'Amount must be greater than 0',
+                validationFailed:  /*[[#{error.generic}]]*/ 'Validation failed',
+                locale:            /*[[${#locale.language}]]*/ 'id'
+            };
+
+            document.addEventListener('DOMContentLoaded', function () {
+
+                // ========== ELEMEN ==========
+                const vendorSelect = document.getElementById('vendorSelect');
+                const storeSelect = document.getElementById('storeSelect');
+                const piSearchInput = document.getElementById('piSearchInput');
+                const piDropdown = document.getElementById('piDropdown');
+                const piDropdownList = document.getElementById('piDropdownList');
+                const piDropdownLoading = document.getElementById('piDropdownLoading');
+                const piDropdownEmpty = document.getElementById('piDropdownEmpty');
+                const piDropdownEmptyMsg = document.getElementById('piDropdownEmptyMsg');
+                const piDropdownToggle = document.getElementById('piDropdownToggle');
+                const piIdHidden = document.getElementById('piIdHidden');
+                const piDetailCard = document.getElementById('piDetailCard');
+
+                const amountInput = document.getElementById('amountInput');
+                const amountHint = document.getElementById('amountHint');
+                const amountWarning = document.getElementById('amountWarning');
+                const amountWarningMsg = document.getElementById('amountWarningMsg');
+                const methodSelect = document.getElementById('methodSelect');
+                const bankAccountGroup = document.getElementById('bankAccountGroup');
+
+                // ========== STATE ==========
+                let openInvoices = [];
+                let filteredInvoices = [];
+                let selectedInvoice = null;
+                let outstandingAmount = 0;
+
+                // ========== 1. TOGGLE BANK ACCOUNT ==========
+                function toggleBankAccount() {
+                    const method = methodSelect.value;
+                    bankAccountGroup.style.display =
+                        (method === 'TRANSFER' || method === 'GIRO') ? 'block' : 'none';
+                }
+                methodSelect.addEventListener('change', toggleBankAccount);
+                toggleBankAccount();
+
+                // ========== 2. LOAD PI SAAT VENDOR DIPILIH ==========
+                vendorSelect.addEventListener('change', function () {
+                    const vendorId = this.value;
+                    resetPIDropdown();
+
+                    if (!vendorId) {
+                        piSearchInput.disabled = true;
+                        piSearchInput.placeholder = I18N.selectVendor;
+                        return;
+                    }
+
+                    piSearchInput.disabled = false;
+                    piSearchInput.placeholder = I18N.clickToSelect;
+                    loadOpenInvoices(vendorId);
+                });
+
+                // ========== 3. FILTER VENDOR BY STORE (SUPER_ADMIN) ==========
+                if (storeSelect) {
+                    storeSelect.addEventListener('change', function () {
+                        const storeId = this.value;
+                        const options = vendorSelect.querySelectorAll('option');
+
+                        options.forEach(opt => {
+                            if (!opt.value) return;
+                            const vendorStoreId = opt.getAttribute('data-store-id');
+                            opt.style.display =
+                                (!storeId || vendorStoreId === storeId) ? '' : 'none';
+                        });
+
+                        vendorSelect.value = '';
+                        resetPIDropdown();
+                    });
+                }
+
+                // ========== 4. FETCH PI OUTSTANDING ==========
+                async function loadOpenInvoices(vendorId) {
+                    piDropdownLoading.style.display = 'block';
+                    piDropdownEmpty.style.display = 'none';
+                    piDropdownList.innerHTML = '';
+                    piDropdown.style.display = 'block';
+
+                    try {
+                        const storeId = storeSelect ? storeSelect.value : null;
+                        let url = `/web/purchase/invoices/open?vendorId=${encodeURIComponent(vendorId)}`;
+                        if (storeId) url += `&storeId=${encodeURIComponent(storeId)}`;
+
+                        const res = await fetch(url, {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' },
+                            credentials: 'same-origin'
+                        });
+
+                        if (res.status === 401) {
+                            alert(I18N.sessionExpired);
+                            window.location.href = '/login?expired';
+                            return;
+                        }
+
+                        if (!res.ok) {
+                            let msg = 'HTTP ' + res.status;
+                            try {
+                                const err = await res.json();
+                                msg = err.message || msg;
+                            } catch (e) { }
+                            throw new Error(msg);
+                        }
+
+                        const data = await res.json();
+                        openInvoices = data || [];
+                        filteredInvoices = [...openInvoices];
+                        renderPIDropdown();
+
+                        if (openInvoices.length === 0) {
+                            piDropdownEmpty.style.display = 'block';
+                            piDropdownEmptyMsg.textContent = I18N.noData;
+                            piSearchInput.placeholder = I18N.noData;
+                        } else {
+                            piSearchInput.placeholder =
+                                `${openInvoices.length} ${I18N.outstanding} — ${I18N.clickToSelect}`;
+                        }
+                    } catch (err) {
+                        console.error('Failed to load PI:', err);
+                        piDropdownList.innerHTML = `
+                    <div style="padding:16px;text-align:center;
+                                color:var(--bc-danger);font-size:12px;">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        ${I18N.loadFailed}: ${escapeHtml(err.message)}
+                    </div>`;
+                    } finally {
+                        piDropdownLoading.style.display = 'none';
+                    }
+                }
+
+                // ========== 5. RENDER DROPDOWN ==========
+                function renderPIDropdown() {
+                    if (filteredInvoices.length === 0) {
+                        piDropdownList.innerHTML = '';
+                        if (openInvoices.length > 0) {
+                            piDropdownEmptyMsg.textContent = I18N.noData;
+                            piDropdownEmpty.style.display = 'block';
+                        }
+                        return;
+                    }
+
+                    piDropdownEmpty.style.display = 'none';
+                    piDropdownList.innerHTML = filteredInvoices.map((pi, idx) => {
+                        const outstanding = pi.totalAmount - pi.paidAmount;
+                        return `
+                    <div class="pi-option" data-index="${idx}"
+                         style="padding:10px 14px;cursor:pointer;
+                                border-bottom:1px solid var(--bc-border);
+                                transition:background .15s;">
+                        <div style="display:flex;justify-content:space-between;
+                                    align-items:center;gap:12px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;
+                                            color:var(--bc-primary);font-size:13px;">
+                                    ${escapeHtml(pi.invoiceNo)}
+                                    ${pi.vendorInvoiceNo
+                                ? `<span style="font-weight:400;
+                                                        color:var(--bc-text-muted);font-size:11px;">
+                                            (${escapeHtml(pi.vendorInvoiceNo)})
+                                           </span>`
+                                : ''}
+                                </div>
+                                <div style="font-size:11px;color:var(--bc-text-secondary);
+                                            margin-top:2px;">
+                                    ${formatDate(pi.invoiceDate)}
+                                    ${pi.dueDate
+                                ? ` • ${I18N.dueDate}: ${formatDate(pi.dueDate)}`
+                                : ''}
+                                </div>
+                            </div>
+                            <div style="text-align:right;flex-shrink:0;">
+                                <div style="font-size:10px;color:var(--bc-text-muted);
+                                            text-transform:uppercase;">
+                                    ${I18N.outstanding}
+                                </div>
+                                <div style="font-weight:700;
+                                            color:var(--bc-danger);font-size:13px;">
+                                    ${I18N.currencyPrefix} ${formatNumber(outstanding)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                    }).join('');
+
+                    piDropdownList.querySelectorAll('.pi-option').forEach(el => {
+                        el.addEventListener('mouseenter', () => el.style.background = 'var(--bc-bg-app)');
+                        el.addEventListener('mouseleave', () => el.style.background = '');
+                        el.addEventListener('click', () => {
+                            const idx = parseInt(el.getAttribute('data-index'));
+                            selectInvoice(filteredInvoices[idx]);
+                        });
+                    });
+                }
+
+                // ========== 6. SELECT PI ==========
+                function selectInvoice(pi) {
+                    selectedInvoice = pi;
+                    outstandingAmount = pi.totalAmount - pi.paidAmount;
+
+                    piIdHidden.value = pi.id;
+                    piSearchInput.value = pi.invoiceNo
+                        + (pi.vendorInvoiceNo ? ` (${pi.vendorInvoiceNo})` : '');
+
+                    closePIDropdown();
+
+                    piDetailCard.style.display = 'block';
+                    document.getElementById('piDetailNo').textContent = pi.invoiceNo;
+                    document.getElementById('piDetailDate').textContent = formatDate(pi.invoiceDate);
+                    document.getElementById('piDetailTotal').textContent =
+                        I18N.currencyPrefix + ' ' + formatNumber(pi.totalAmount);
+                    document.getElementById('piDetailOutstanding').textContent =
+                        I18N.currencyPrefix + ' ' + formatNumber(outstandingAmount);
+
+                    if (!amountInput.value) {
+                        amountInput.value = outstandingAmount.toFixed(2);
+                    }
+
+                    amountHint.textContent =
+                        `(${I18N.maxAmount}: ${I18N.currencyPrefix} ${formatNumber(outstandingAmount)})`;
+                    validateAmount();
+
+                    setTimeout(() => amountInput.focus(), 100);
+                }
+
+                // ========== 7. RESET PI ==========
+                function resetPIDropdown() {
+                    openInvoices = [];
+                    filteredInvoices = [];
+                    selectedInvoice = null;
+                    outstandingAmount = 0;
+
+                    piSearchInput.value = '';
+                    piIdHidden.value = '';
+                    piDropdownList.innerHTML = '';
+                    piDropdown.style.display = 'none';
+                    piDetailCard.style.display = 'none';
+                    amountHint.textContent = '';
+                    amountWarning.style.display = 'none';
+                }
+
+                // ========== 8. TOGGLE DROPDOWN ==========
+                piSearchInput.addEventListener('focus', function () {
+                    if (this.disabled) return;
+                    if (openInvoices.length > 0) piDropdown.style.display = 'block';
+                });
+
+                piDropdownToggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    if (piSearchInput.disabled) return;
+                    if (piDropdown.style.display === 'block') {
+                        closePIDropdown();
+                    } else if (openInvoices.length > 0) {
+                        piDropdown.style.display = 'block';
+                        piSearchInput.focus();
+                    }
+                });
+
+                // ========== 9. SEARCH / FILTER PI ==========
+                piSearchInput.addEventListener('input', function () {
+                    const q = this.value.toLowerCase().trim();
+
+                    if (selectedInvoice) {
+                        piIdHidden.value = '';
+                        selectedInvoice = null;
+                        piDetailCard.style.display = 'none';
+                        amountHint.textContent = '';
+                    }
+
+                    if (!q) {
+                        filteredInvoices = [...openInvoices];
+                    } else {
+                        filteredInvoices = openInvoices.filter(pi =>
+                            (pi.invoiceNo || '').toLowerCase().includes(q) ||
+                            (pi.vendorInvoiceNo || '').toLowerCase().includes(q)
+                        );
+                    }
+
+                    renderPIDropdown();
+                    piDropdown.style.display = 'block';
+                });
+
+                // ========== 10. CLOSE DROPDOWN ON OUTSIDE CLICK ==========
+                document.addEventListener('click', function (e) {
+                    if (!piDropdown.contains(e.target) &&
+                        e.target !== piSearchInput &&
+                        e.target !== piDropdownToggle) {
+                        closePIDropdown();
+                    }
+                });
+
+                function closePIDropdown() {
+                    piDropdown.style.display = 'none';
+                }
+
+                // ========== 11. VALIDATE AMOUNT ==========
+                amountInput.addEventListener('input', validateAmount);
+
+                function validateAmount() {
+                    const value = parseFloat(amountInput.value) || 0;
+                    amountWarning.style.display = 'none';
+
+                    if (value <= 0) return;
+
+                    if (outstandingAmount > 0 && value > outstandingAmount) {
+                        amountWarning.style.display = 'block';
+                        amountWarningMsg.textContent =
+                            `${I18N.amountExceeds} (${I18N.currencyPrefix} ${formatNumber(outstandingAmount)})`;
+                    }
+                }
+
+                // ========== 12. VALIDATE SUBMIT ==========
+                document.getElementById('vpForm').addEventListener('submit', function (e) {
+                    const errors = [];
+
+                    if (!vendorSelect.value) errors.push(I18N.vendorRequired);
+                    if (!piIdHidden.value) errors.push(I18N.piRequired);
+
+                    const paymentDate = document.querySelector('input[name="paymentDate"]').value;
+                    if (!paymentDate) errors.push(I18N.paymentDateReq);
+
+                    const amt = parseFloat(amountInput.value) || 0;
+                    if (amt <= 0) errors.push(I18N.amountPositive);
+
+                    if (outstandingAmount > 0 && amt > outstandingAmount) {
+                        errors.push(I18N.amountExceeds +
+                            ` (${I18N.currencyPrefix} ${formatNumber(outstandingAmount)})`);
+                    }
+
+                    if (errors.length > 0) {
+                        e.preventDefault();
+                        alert(I18N.validationFailed + ':\n\n• ' + errors.join('\n• '));
+
+                        if (!piIdHidden.value) {
+                            piSearchInput.style.borderColor = 'var(--bc-danger)';
+                            piSearchInput.style.boxShadow = '0 0 0 1px var(--bc-danger)';
+                            piSearchInput.focus();
+                            setTimeout(() => {
+                                piSearchInput.style.borderColor = '';
+                                piSearchInput.style.boxShadow = '';
+                            }, 3000);
+                        }
+                    }
+                });
+
+                // ========== 13. HELPERS ==========
+                function formatNumber(n) {
+                    if (n === null || n === undefined) return '0';
+                    return parseFloat(n).toLocaleString(
+                        I18N.locale === 'en' ? 'en-US' : 'id-ID',
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+
+                function formatDate(dateStr) {
+                    if (!dateStr) return '-';
+                    try {
+                        const d = new Date(dateStr);
+                        return d.toLocaleDateString(
+                            I18N.locale === 'en' ? 'en-US' : 'id-ID',
+                            { day: '2-digit', month: 'short', year: 'numeric' });
+                    } catch (e) {
+                        return dateStr;
+                    }
+                }
+
+                function escapeHtml(s) {
+                    if (!s) return '';
+                    return String(s)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                }
+            });
+        </script>
+    </th:block>
+
+</body>
+
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{po.title}">Purchase Orders</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/purchase/orders/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-plus-lg"></i> <span th:text="#{po.new}">New PO</span>
+            </a>
+            <a href="/web/purchase/invoices" class="bc-ribbon-btn">
+                <i class="bi bi-receipt"></i> <span th:text="#{nav.purchase.invoices}">Invoices</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select" onchange="this.form.submit()">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+            </form>
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <span th:text="#{common.total}">Total</span>:
+                <strong th:text="${orders.totalElements}">0</strong>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:150px;" th:text="#{po.field.po.number}">PO Number</th>
+                        <th th:text="#{po.field.vendor}">Vendor</th>
+                        <th th:if="${isSuperAdmin}" style="width:160px;" th:text="#{common.store}">Store</th>
+                        <th style="width:120px;" th:text="#{po.field.order.date}">Order Date</th>
+                        <th style="width:130px;" th:text="#{po.field.expected.date}">Expected</th>
+                        <th style="width:150px;text-align:right;" th:text="#{common.total}">Total</th>
+                        <th style="width:110px;" th:text="#{common.status}">Status</th>
+                        <th style="width:180px;text-align:right;" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="po : ${orders.content}">
+                        <td><strong th:text="${po.poNumber}"></strong></td>
+                        <td th:text="${po.vendor.name}"></td>
+                        <td th:if="${isSuperAdmin}">
+                            <span class="bc-badge bc-badge-info" th:text="${po.store.name}"></span>
+                        </td>
+                        <td th:text="${#temporals.format(po.orderDate, 'dd/MM/yyyy')}"></td>
+                        <td
+                            th:text="${po.expectedDate != null} ? ${#temporals.format(po.expectedDate, 'dd/MM/yyyy')} : '-'">
+                            -</td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(po.totalAmount, 0, 'COMMA', 0, 'POINT')}"></td>
+                        <td>
+                            <span th:if="${po.status == 'DRAFT'}" class="bc-badge bc-badge-secondary"
+                                th:text="#{status.draft}">DRAFT</span>
+                            <span th:if="${po.status == 'CONFIRMED'}" class="bc-badge bc-badge-info"
+                                th:text="#{status.confirmed}">CONFIRMED</span>
+                            <span th:if="${po.status == 'RECEIVED'}" class="bc-badge bc-badge-success"
+                                th:text="#{status.received}">RECEIVED</span>
+                            <span th:if="${po.status == 'CANCELLED'}" class="bc-badge bc-badge-danger"
+                                th:text="#{status.cancelled}">CANCELLED</span>
+                        </td>
+                        <td style="text-align:right;">
+                            <div class="bc-table-actions" style="justify-content:flex-end;">
+                                <a th:href="@{/web/purchase/orders/view/{id}(id=${po.id})}"
+                                    class="bc-btn bc-btn-default bc-btn-sm" th:title="#{common.view}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <form th:if="${po.status == 'DRAFT'}"
+                                    th:action="@{/web/purchase/orders/confirm/{id}(id=${po.id})}" method="post"
+                                    style="display:inline;" th:attr="data-confirm=#{po.confirm.msg}">
+                                    <button class="bc-btn bc-btn-primary bc-btn-sm" th:title="#{po.action.confirm}">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${orders.content.isEmpty()}">
+                        <td th:attr="colspan=${isSuperAdmin} ? 8 : 7">
+                            <div class="bc-empty">
+                                <i class="bi bi-cart"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+</body>
+
+</html>

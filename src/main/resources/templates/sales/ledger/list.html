@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{cl.title}">Customer Ledgers (AR)</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/sales/customer-payments/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-cash-stack"></i>
+                <span th:text="#{cp.new}">Receive Payment</span>
+            </a>
+            <a href="/web/sales/orders" class="bc-ribbon-btn">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span th:text="#{nav.sales.orders}">Sales Orders</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+                <span th:text="#{common.print}">Print</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-stats" style="padding:16px 24px 0;">
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon red"><i class="bi bi-cash-stack"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(totalAr, 0, 'COMMA', 2, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{cl.total.ar}">Total Outstanding AR</div>
+                </div>
+            </div>
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon orange"><i class="bi bi-people"></i></div>
+                <div>
+                    <div class="bc-stat-value" th:text="${summaries.size()}">0</div>
+                    <div class="bc-stat-label" th:text="#{cl.customers.with.ar}">Customers with AR</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bc-filter-bar" style="margin-top:16px;">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select" onchange="this.form.submit()">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+
+                <input type="text" id="searchInput" class="bc-input" th:placeholder="#{common.search} + '...'"
+                    oninput="filterTable(this.value)">
+
+                <a href="/web/sales/customer-ledgers" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-x-circle"></i>
+                    <span th:text="#{common.reset}">Reset</span>
+                </a>
+            </form>
+
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <i class="bi bi-info-circle"></i>
+                <span th:text="#{cl.info}">Only customers with AR > 0</span>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table" id="arTable">
+                <thead>
+                    <tr>
+                        <th style="width:130px;" th:text="#{customers.field.code}">Code</th>
+                        <th th:text="#{customers.field.name}">Name</th>
+                        <th th:if="${isSuperAdmin}" style="width:160px;" th:text="#{common.store}">Store</th>
+                        <th style="width:150px;" th:text="#{customers.field.phone}">Phone</th>
+                        <th style="width:130px;text-align:right;" th:text="#{cl.field.invoice.count}">Invoice Count</th>
+                        <th style="width:180px;text-align:right;" th:text="#{cl.field.total.ar}">Total AR</th>
+                        <th style="width:160px;text-align:right;" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="s : ${summaries}" class="ar-row"
+                        th:attr="data-search=${s.customerCode + ' ' + s.customerName}">
+                        <td>
+                            <strong style="color:var(--bc-primary);" th:text="${s.customerCode}"></strong>
+                        </td>
+                        <td th:text="${s.customerName}"></td>
+                        <td th:if="${isSuperAdmin}">
+                            <span class="bc-badge bc-badge-info" th:text="${s.storeName}"></span>
+                        </td>
+                        <td th:text="${s.customerPhone} ?: '-'">-</td>
+                        <td style="text-align:right;">
+                            <span class="bc-badge bc-badge-secondary" th:text="${s.invoiceCount} + ' invoice'"></span>
+                        </td>
+                        <td style="text-align:right;font-weight:700;color:var(--bc-danger);font-size:14px;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(s.totalAr, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;">
+                            <div class="bc-table-actions" style="justify-content:flex-end;">
+                                <a th:href="@{/web/sales/customer-ledgers/{id}(id=${s.customerId}, storeId=${selectedStoreId})}"
+                                    class="bc-btn bc-btn-default bc-btn-sm" th:title="#{common.detail}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a th:href="@{/web/sales/customer-payments/create(customerId=${s.customerId})}"
+                                    class="bc-btn bc-btn-primary bc-btn-sm" th:title="#{cp.new}">
+                                    <i class="bi bi-cash-stack"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${summaries.isEmpty()}">
+                        <td th:attr="colspan=${isSuperAdmin} ? 7 : 6">
+                            <div class="bc-empty">
+                                <i class="bi bi-check2-circle" style="color:var(--bc-success);"></i>
+                                <div style="font-weight:600;color:var(--bc-success);margin-bottom:4px;"
+                                    th:text="#{cl.empty}">No Outstanding AR</div>
+                                <div th:text="#{cl.empty.desc}">All customers have paid.</div>
+                                <a href="/web/sales/orders" class="bc-btn bc-btn-default" style="margin-top:12px;">
+                                    <i class="bi bi-receipt-cutoff"></i>
+                                    <span th:text="#{nav.sales.orders}">Sales Orders</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+
+    <th:block layout:fragment="scripts">
+        <script>
+            function filterTable(query) {
+                const q = (query || '').toLowerCase().trim();
+                document.querySelectorAll('.ar-row').forEach(row => {
+                    const text = (row.getAttribute('data-search') || '').toLowerCase();
+                    row.style.display = (!q || text.includes(q)) ? '' : 'none';
+                });
+            }
+        </script>
+    </th:block>
+
+</body>
+
+</html>

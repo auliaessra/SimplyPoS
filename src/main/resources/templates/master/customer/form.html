@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{customers.title}">Customer Form</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="customerForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i>
+                <span th:text="#{common.save}">Save</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/master/customers" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i>
+                <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="customerForm"
+                th:action="${id != null} ? @{/web/master/customers/edit/{id}(id=${id})} : @{/web/master/customers/create}"
+                th:object="${customer}" method="post">
+
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-people" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{customers.title}">Customer</span>
+                    </span>
+                    <span class="bc-badge bc-badge-secondary" th:text="${id != null} ? 'EDIT' : 'NEW'">NEW</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <div th:if="${isSuperAdmin}" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{common.store}">Store</label>
+                            <select th:field="*{storeId}" class="bc-select" required>
+                                <option value="" th:text="#{common.select.store}">Select Store</option>
+                                <option th:each="s : ${stores}" th:value="${s.id}"
+                                    th:text="${s.code} + ' - ' + ${s.name}"></option>
+                            </select>
+                        </div>
+                        <div></div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{customers.field.code}">Customer Code</label>
+                            <input type="text" th:field="*{code}" class="bc-input" placeholder="CST-001" required>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{customers.field.name}">Customer Name</label>
+                            <input type="text" th:field="*{name}" class="bc-input" required>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{customers.field.phone}">Phone / WhatsApp</label>
+                            <input type="text" th:field="*{phone}" class="bc-input" placeholder="0812xxxxxxxx">
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{customers.field.email}">Email</label>
+                            <input type="email" th:field="*{email}" class="bc-input" placeholder="customer@example.com">
+                        </div>
+                    </div>
+
+                    <div class="bc-form-group">
+                        <label class="bc-label" th:text="#{customers.field.address}">Address</label>
+                        <textarea th:field="*{address}" class="bc-textarea" rows="3"></textarea>
+                    </div>
+
+                    <div class="bc-form-group">
+                        <label class="bc-checkbox">
+                            <input type="checkbox" th:field="*{isActive}">
+                            <span th:text="#{common.active}">Active</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bc-card-body" style="border-top:1px solid var(--bc-border);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                        <button type="submit" class="bc-btn bc-btn-primary">
+                            <i class="bi bi-check-lg"></i>
+                            <span th:text="#{common.save}">Save</span>
+                        </button>
+                        <a href="/web/master/customers" class="bc-btn bc-btn-default">
+                            <i class="bi bi-x-lg"></i>
+                            <span th:text="#{common.cancel}">Cancel</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+
+</body>
+
+</html>

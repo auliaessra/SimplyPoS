@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{profile.title}">My Profile</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="content">
+
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;
+                padding:16px 24px;">
+
+            <!-- ============ LEFT: Profile Card ============ -->
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-body" style="text-align:center;padding:32px 20px;">
+
+                    <div style="width:96px;height:96px;border-radius:50%;
+                            background:linear-gradient(135deg,#0078D4,#50E6FF);
+                            color:#fff;display:flex;align-items:center;
+                            justify-content:center;font-weight:600;font-size:36px;
+                            margin:0 auto 16px;box-shadow:0 4px 12px rgba(0,120,212,.3);"
+                        th:text="${#strings.substring(profile.fullName, 0, 1).toUpperCase()}">
+                        A
+                    </div>
+
+                    <h2 style="margin:0 0 4px;font-size:20px;font-weight:600;" th:text="${profile.fullName}">User</h2>
+
+                    <div style="color:var(--bc-text-secondary);font-size:13px;margin-bottom:16px;"
+                        th:text="'@' + ${profile.username}">
+                        @admin
+                    </div>
+
+                    <span class="bc-badge" style="padding:6px 14px;font-size:12px;" th:classappend="
+                          ${profile.role == 'SUPER_ADMIN' ? 'bc-badge-danger' :
+                          profile.role == 'ADMIN' ? 'bc-badge-info' :
+                          profile.role == 'CASHIER' ? 'bc-badge-success' :
+                          'bc-badge-secondary'}" th:text="${profile.role}">ADMIN</span>
+
+                    <div style="text-align:left;margin-top:24px;
+                            border-top:1px solid var(--bc-border);padding-top:16px;">
+                        <div class="bc-info-row">
+                            <div class="bc-info-label" th:text="#{users.field.email}">Email</div>
+                            <div class="bc-info-value" th:text="${profile.email} ?: '-'">-</div>
+                        </div>
+                        <div class="bc-info-row">
+                            <div class="bc-info-label" th:text="#{users.field.phone}">Phone</div>
+                            <div class="bc-info-value" th:text="${profile.phone} ?: '-'">-</div>
+                        </div>
+                        <div class="bc-info-row" th:if="${profile.storeName != null}">
+                            <div class="bc-info-label" th:text="#{common.store}">Cabang</div>
+                            <div class="bc-info-value" th:text="${profile.storeName}">-</div>
+                        </div>
+                        <div class="bc-info-row" th:if="${profile.lastLoginAt != null}">
+                            <div class="bc-info-label" th:text="#{profile.last.login}">Login Terakhir</div>
+                            <div class="bc-info-value"
+                                th:text="${#temporals.format(profile.lastLoginAt, 'dd MMM yyyy HH:mm')}">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ RIGHT: Forms ============ -->
+            <div>
+
+                <!-- ===== Update Profile ===== -->
+                <div class="bc-card" style="margin:0;">
+                    <div class="bc-card-header">
+                        <span>
+                            <i class="bi bi-person-gear" style="color:var(--bc-primary);"></i>
+                            <span th:text="#{profile.update.title}">Update Profile</span>
+                        </span>
+                    </div>
+                    <div class="bc-card-body">
+                        <form th:action="@{/web/profile/update}" th:object="${profileForm}" method="post">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                                <div class="bc-form-group">
+                                    <label class="bc-label required" th:text="#{users.field.fullname}">Nama
+                                        Lengkap</label>
+                                    <input type="text" th:field="*{fullName}" class="bc-input"
+                                        th:value="${profile.fullName}" required>
+                                </div>
+                                <div class="bc-form-group">
+                                    <label class="bc-label" th:text="#{users.field.email}">Email</label>
+                                    <input type="email" th:field="*{email}" class="bc-input"
+                                        th:value="${profile.email}">
+                                </div>
+                            </div>
+                            <div class="bc-form-group">
+                                <label class="bc-label" th:text="#{users.field.phone}">Telepon</label>
+                                <input type="text" th:field="*{phone}" class="bc-input" th:value="${profile.phone}">
+                            </div>
+                            <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                                <button type="submit" class="bc-btn bc-btn-primary">
+                                    <i class="bi bi-check-lg"></i>
+                                    <span th:text="#{common.save}">Save</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ===== Change Password ===== -->
+                <div class="bc-card" style="margin-top:16px;">
+                    <div class="bc-card-header">
+                        <span>
+                            <i class="bi bi-shield-lock" style="color:var(--bc-primary);"></i>
+                            <span th:text="#{profile.change.password}">Ubah Password</span>
+                        </span>
+                    </div>
+                    <div class="bc-card-body">
+                        <form th:action="@{/web/profile/change-password}" th:object="${passwordForm}" method="post">
+                            <div class="bc-form-group">
+                                <label class="bc-label required" th:text="#{profile.current.password}">Password
+                                    Lama</label>
+                                <input type="password" th:field="*{currentPassword}" class="bc-input"
+                                    autocomplete="current-password" required>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                                <div class="bc-form-group">
+                                    <label class="bc-label required" th:text="#{profile.new.password}">Password
+                                        Baru</label>
+                                    <input type="password" th:field="*{newPassword}" class="bc-input"
+                                        autocomplete="new-password" required>
+                                    <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                        th:text="#{users.field.password.hint}">Minimal 6 karakter</small>
+                                </div>
+                                <div class="bc-form-group">
+                                    <label class="bc-label required" th:text="#{profile.confirm.password}">Konfirmasi
+                                        Password</label>
+                                    <input type="password" th:field="*{confirmPassword}" class="bc-input"
+                                        autocomplete="new-password" required>
+                                </div>
+                            </div>
+                            <div class="bc-form-actions" style="margin:0;padding:0;border:none;">
+                                <button type="submit" class="bc-btn bc-btn-primary">
+                                    <i class="bi bi-shield-check"></i>
+                                    <span th:text="#{profile.change.password.button}">Ubah Password</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </th:block>
+</body>
+
+</html>

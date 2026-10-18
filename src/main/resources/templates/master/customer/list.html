@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{customers.title}">Customers</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/master/customers/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-plus-lg"></i>
+                <span th:text="#{common.new}">New</span>
+            </a>
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+                <span th:text="#{common.print}">Print</span>
+            </button>
+            <button type="button" class="bc-ribbon-btn" onclick="exportData()">
+                <i class="bi bi-file-earmark-excel"></i>
+                <span th:text="#{common.export}">Export</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select" onchange="this.form.submit()">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+
+                <input type="text" name="q" th:value="${q}" class="bc-input" th:placeholder="#{common.search} + '...'">
+
+                <button type="submit" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-search"></i>
+                    <span th:text="#{common.search}">Search</span>
+                </button>
+                <a href="/web/master/customers" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-x-circle"></i>
+                    <span th:text="#{common.reset}">Reset</span>
+                </a>
+            </form>
+
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <span th:text="#{common.total}">Total</span>:
+                <strong th:text="${customers.size()}">0</strong>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:130px;" th:text="#{customers.field.code}">Code</th>
+                        <th th:text="#{customers.field.name}">Name</th>
+                        <th th:if="${isSuperAdmin}" style="width:180px;" th:text="#{common.store}">Store</th>
+                        <th style="width:150px;" th:text="#{customers.field.phone}">Phone</th>
+                        <th style="width:200px;" th:text="#{customers.field.email}">Email</th>
+                        <th style="width:100px;" th:text="#{common.status}">Status</th>
+                        <th style="width:120px;text-align:right;" th:text="#{common.actions}"
+                            sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="c : ${customers}">
+                        <td>
+                            <strong style="color:var(--bc-primary);" th:text="${c.code}">CST-001</strong>
+                        </td>
+                        <td th:text="${c.name}">Budi Santoso</td>
+                        <td th:if="${isSuperAdmin}">
+                            <span class="bc-badge bc-badge-info" th:text="${c.storeName}">Pusat</span>
+                        </td>
+                        <td th:text="${c.phone} ?: '-'">-</td>
+                        <td th:text="${c.email} ?: '-'">-</td>
+                        <td>
+                            <span th:if="${c.isActive}" class="bc-badge bc-badge-success"
+                                th:text="#{common.active}">Active</span>
+                            <span th:unless="${c.isActive}" class="bc-badge bc-badge-secondary"
+                                th:text="#{common.inactive}">Inactive</span>
+                        </td>
+                        <td style="text-align:right;" sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')">
+                            <div class="bc-table-actions" style="justify-content:flex-end;">
+                                <a th:href="@{/web/master/customers/edit/{id}(id=${c.id})}"
+                                    class="bc-btn bc-btn-default bc-btn-sm" th:title="#{common.edit}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:action="@{/web/master/customers/delete/{id}(id=${c.id})}" method="post"
+                                    style="display:inline;" th:attr="data-confirm=#{common.confirm.delete}">
+                                    <button class="bc-btn bc-btn-danger bc-btn-sm" th:title="#{common.delete}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${customers.isEmpty()}">
+                        <td th:attr="colspan=${isSuperAdmin} ? 7 : 6">
+                            <div class="bc-empty">
+                                <i class="bi bi-people"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                                <a href="/web/master/customers/create" class="bc-btn bc-btn-primary"
+                                    style="margin-top:12px;">
+                                    <i class="bi bi-plus-lg"></i>
+                                    <span th:text="#{common.new}">New</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            const I18N = {
+                exportNotReady: /*[[#{common.export}]]*/ 'Export'
+            };
+
+            function exportData() {
+                alert(I18N.exportNotReady + ' — ' + 'coming soon');
+            }
+        </script>
+    </th:block>
+
+</body>
+
+</html>

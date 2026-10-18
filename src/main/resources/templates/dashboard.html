@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{dashboard.title}">Dashboard</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/sales/pos" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-shop"></i>
+                <span th:text="#{so.new}">New Sale</span>
+            </a>
+            <a href="/web/reports/sales" class="bc-ribbon-btn">
+                <i class="bi bi-graph-up"></i>
+                <span th:text="#{nav.reports.sales}">Sales Report</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+
+            <!-- Store filter untuk SUPER_ADMIN -->
+            <form th:if="${isSuperAdmin}" method="get" style="display:inline-flex;gap:6px;align-items:center;">
+                <select name="storeId" class="bc-select" style="height:30px;font-size:12px;width:auto;"
+                    onchange="this.form.submit()">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+            </form>
+
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <!-- ============ KPI CARDS ============ -->
+        <div class="bc-stats">
+            <!-- Today Sales -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon blue"><i class="bi bi-cash-coin"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(kpi.todaySales, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label">
+                        <span th:text="#{dashboard.kpi.today.sales}">Today Sales</span>
+                        <span class="bc-badge bc-badge-info" th:text="${kpi.todaySalesCount} + 'x'">0x</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Month Sales -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon green"><i class="bi bi-graph-up-arrow"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(kpi.monthSales, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{dashboard.kpi.month.sales}">This Month Sales</div>
+                </div>
+            </div>
+
+            <!-- Month Profit -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon orange"><i class="bi bi-trophy"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:styleappend="${kpi.monthProfit >= 0} ? 'color:var(--bc-success);' : 'color:var(--bc-danger);'"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(kpi.monthProfit, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{dashboard.kpi.month.profit}">This Month Profit</div>
+                </div>
+            </div>
+
+            <!-- AR Outstanding -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon red"><i class="bi bi-hourglass-split"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(kpi.totalAr, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{dashboard.kpi.ar}">Outstanding AR</div>
+                </div>
+            </div>
+
+            <!-- AP Outstanding -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon red"><i class="bi bi-hourglass"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(kpi.totalAp, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{dashboard.kpi.ap}">Outstanding AP</div>
+                </div>
+            </div>
+
+            <!-- Inventory Value -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon blue"><i class="bi bi-box-seam"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(kpi.totalInventoryValue, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{dashboard.kpi.inventory}">Inventory Value</div>
+                </div>
+            </div>
+
+            <!-- Low Stock -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon orange"><i class="bi bi-exclamation-triangle"></i></div>
+                <div>
+                    <div class="bc-stat-value" th:styleappend="${kpi.lowStockCount > 0} ? 'color:var(--bc-danger);'"
+                        th:text="${kpi.lowStockCount}">0</div>
+                    <div class="bc-stat-label" th:text="#{dashboard.kpi.low.stock}">Low Stock Items</div>
+                </div>
+            </div>
+
+            <!-- Month Purchase -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon orange"><i class="bi bi-cart-check"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(kpi.monthPurchases, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{dashboard.kpi.month.purchase}">This Month Purchase</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ CHARTS ROW 1 ============ -->
+        <div class="bc-stats">
+
+            <!-- Sales Trend 30 days -->
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-graph-up" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{dashboard.chart.sales.30d}">Sales Trend (Last 30 Days)</span>
+                    </span>
+                </div>
+                <div class="bc-card-body" style="height:280px;">
+                    <canvas id="salesTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Products -->
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-trophy" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{dashboard.chart.top.products}">Top Products (30d)</span>
+                    </span>
+                </div>
+                <div class="bc-card-body" style="height:280px;">
+                    <canvas id="topProductsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ CHARTS ROW 2 ============ -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;
+                padding:16px 24px 24px;">
+
+            <!-- Sales Trend 12 months -->
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-calendar3" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{dashboard.chart.sales.12m}">Sales Trend (Last 12 Months)</span>
+                    </span>
+                </div>
+                <div class="bc-card-body" style="height:260px;">
+                    <canvas id="salesMonthlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Purchase Trend 30 days -->
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-cart-check" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{dashboard.chart.purchase.30d}">Purchase Trend (Last 30 Days)</span>
+                    </span>
+                </div>
+                <div class="bc-card-body" style="height:260px;">
+                    <canvas id="purchaseTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </th:block>
+
+    <th:block layout:fragment="scripts">
+        <!-- Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+        <script th:inline="javascript">
+            const I18N = {
+                chartSales:      /*[[#{dashboard.chart.sales.30d}]]*/ 'Sales',
+                chartPurchases:  /*[[#{dashboard.chart.purchase.30d}]]*/ 'Purchases',
+                chartMonthly:    /*[[#{dashboard.chart.sales.12m}]]*/ 'Monthly Sales',
+                chartProducts:   /*[[#{dashboard.chart.top.products}]]*/ 'Top Products',
+                revenue:         /*[[#{dashboard.kpi.month.sales}]]*/ 'Revenue',
+                quantityMl:      /*[[#{ij.field.qty}]]*/ 'Qty (ML)',
+                noData:          /*[[#{common.no.data}]]*/ 'No data'
+            };
+
+            // Data dari server
+            const salesTrend30 = /*[[${salesTrend30}]]*/[];
+            const salesTrend12m = /*[[${salesTrend12m}]]*/[];
+            const topProducts30 = /*[[${topProducts30}]]*/[];
+            const purchaseTrend30 = /*[[${purchaseTrend30}]]*/[];
+
+            // Palette warna BC365
+            const COLOR_PRIMARY = '#0078D4';
+            const COLOR_PRIMARY_LIGHT = 'rgba(0,120,212,.15)';
+            const COLOR_SUCCESS = '#107C10';
+            const COLOR_SUCCESS_LIGHT = 'rgba(16,124,16,.15)';
+            const COLOR_WARNING = '#FFB900';
+            const COLOR_WARNING_LIGHT = 'rgba(255,185,0,.15)';
+
+            // ============ HELPER ============
+            function formatNumber(n) {
+                return parseFloat(n || 0).toLocaleString(
+            /*[[${#locale.language}]]*/ 'id' === 'en' ? 'en-US' : 'id-ID',
+                    { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+
+            // ============ 1. Sales Trend 30 Days ============
+            if (document.getElementById('salesTrendChart') && salesTrend30.length > 0) {
+                new Chart(document.getElementById('salesTrendChart'), {
+                    type: 'line',
+                    data: {
+                        labels: salesTrend30.map(p => p.label),
+                        datasets: [{
+                            label: I18N.chartSales,
+                            data: salesTrend30.map(p => p.value),
+                            borderColor: COLOR_PRIMARY,
+                            backgroundColor: COLOR_PRIMARY_LIGHT,
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => 'Rp ' + formatNumber(ctx.parsed.y)
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#EDEBE9' },
+                                ticks: {
+                                    font: { size: 10 },
+                                    callback: v => 'Rp ' + formatNumber(v)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ============ 2. Top Products (Doughnut) ============
+            if (document.getElementById('topProductsChart') && topProducts30.length > 0) {
+                new Chart(document.getElementById('topProductsChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: topProducts30.map(p => p.itemName),
+                        datasets: [{
+                            data: topProducts30.map(p => p.revenue),
+                            backgroundColor: [
+                                COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING,
+                                '#8764B8', '#D13438'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { font: { size: 11 }, boxWidth: 12, padding: 8 }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => {
+                                        const p = topProducts30[ctx.dataIndex];
+                                        return `${p.itemName}: Rp ${formatNumber(p.revenue)} (${formatNumber(p.qtyMl)} ML)`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '55%'
+                    }
+                });
+            }
+
+            // ============ 3. Sales Trend 12 Months (Bar) ============
+            if (document.getElementById('salesMonthlyChart') && salesTrend12m.length > 0) {
+                new Chart(document.getElementById('salesMonthlyChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: salesTrend12m.map(p => p.label),
+                        datasets: [{
+                            label: I18N.chartMonthly,
+                            data: salesTrend12m.map(p => p.value),
+                            backgroundColor: COLOR_PRIMARY,
+                            borderRadius: 4,
+                            maxBarThickness: 40
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => 'Rp ' + formatNumber(ctx.parsed.y)
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 10 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#EDEBE9' },
+                                ticks: {
+                                    font: { size: 10 },
+                                    callback: v => 'Rp ' + formatNumber(v)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ============ 4. Purchase Trend (Bar) ============
+            if (document.getElementById('purchaseTrendChart') && purchaseTrend30.length > 0) {
+                new Chart(document.getElementById('purchaseTrendChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: purchaseTrend30.map(p => p.label),
+                        datasets: [{
+                            label: I18N.chartPurchases,
+                            data: purchaseTrend30.map(p => p.value),
+                            backgroundColor: COLOR_SUCCESS,
+                            borderRadius: 4,
+                            maxBarThickness: 16
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => 'Rp ' + formatNumber(ctx.parsed.y)
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#EDEBE9' },
+                                ticks: {
+                                    font: { size: 10 },
+                                    callback: v => 'Rp ' + formatNumber(v)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        </script>
+    </th:block>
+
+</body>
+
+</html>

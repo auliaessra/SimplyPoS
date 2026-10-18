@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{cp.title}">Customer Payments</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/sales/customer-payments/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-plus-lg"></i>
+                <span th:text="#{cp.new}">New Payment</span>
+            </a>
+            <a href="/web/sales/orders" class="bc-ribbon-btn">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span th:text="#{nav.sales.orders}">Sales Orders</span>
+            </a>
+            <a href="/web/sales/customer-ledgers" class="bc-ribbon-btn">
+                <i class="bi bi-journal-bookmark"></i>
+                <span th:text="#{nav.sales.customer.ledgers}">Customer Ledger</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select" onchange="this.form.submit()">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+            </form>
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <span th:text="#{common.total}">Total</span>:
+                <strong th:text="${payments.totalElements}">0</strong>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:150px;" th:text="#{cp.field.payment.number}">Payment No</th>
+                        <th th:text="#{so.field.customer}">Customer</th>
+                        <th style="width:150px;" th:text="#{cp.field.sales.order}">Sales Order</th>
+                        <th th:if="${isSuperAdmin}" style="width:160px;" th:text="#{common.store}">Store</th>
+                        <th style="width:120px;" th:text="#{cp.field.payment.date}">Date</th>
+                        <th style="width:110px;" th:text="#{so.field.payment.method}">Method</th>
+                        <th style="width:160px;text-align:right;" th:text="#{cp.field.amount}">Amount</th>
+                        <th style="width:100px;" th:text="#{common.status}">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="p : ${payments.content}">
+                        <td><strong style="color:var(--bc-primary);" th:text="${p.paymentNo}">CPAY0001</strong></td>
+                        <td th:text="${p.customer.name}">Customer A</td>
+                        <td th:text="${p.salesOrder != null} ? ${p.salesOrder.orderNo} : '-'">-</td>
+                        <td th:if="${isSuperAdmin}">
+                            <span class="bc-badge bc-badge-info" th:text="${p.store.name}"></span>
+                        </td>
+                        <td th:text="${#temporals.format(p.paymentDate, 'dd/MM/yyyy')}"></td>
+                        <td>
+                            <span class="bc-badge bc-badge-secondary" th:text="${p.paymentMethod}">CASH</span>
+                        </td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(p.amount, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td>
+                            <span class="bc-badge bc-badge-success" th:text="${p.status}">POSTED</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${payments.content.isEmpty()}">
+                        <td th:attr="colspan=${isSuperAdmin} ? 8 : 7">
+                            <div class="bc-empty">
+                                <i class="bi bi-cash-stack"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                                <a href="/web/sales/customer-payments/create" class="bc-btn bc-btn-primary"
+                                    style="margin-top:12px;">
+                                    <i class="bi bi-plus-lg"></i>
+                                    <span th:text="#{cp.new}">New Payment</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+
+</body>
+
+</html>

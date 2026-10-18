@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{nav.reports.purchase}">Purchase Report</title>
+</head>
+
+<body>
+
+    <!-- =========================================================
+     RIBBON
+     ========================================================= -->
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+                <span th:text="#{common.print}">Print</span>
+            </button>
+            <button type="button" class="bc-ribbon-btn" onclick="exportCsv()">
+                <i class="bi bi-file-earmark-excel"></i>
+                <span th:text="#{common.export}">Export</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/reports/sales" class="bc-ribbon-btn">
+                <i class="bi bi-graph-up"></i>
+                <span th:text="#{nav.reports.sales}">Sales Report</span>
+            </a>
+            <a href="/web/reports/inventory" class="bc-ribbon-btn">
+                <i class="bi bi-box-seam"></i>
+                <span th:text="#{nav.reports.inventory}">Inventory Report</span>
+            </a>
+        </div>
+    </th:block>
+
+    <!-- =========================================================
+     CONTENT
+     ========================================================= -->
+    <th:block layout:fragment="content">
+
+        <!-- ============ FILTER BAR ============ -->
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+
+                <input type="date" name="from" th:value="${from}" class="bc-input" style="max-width:160px;">
+                <span style="color:var(--bc-text-muted);">→</span>
+                <input type="date" name="to" th:value="${to}" class="bc-input" style="max-width:160px;">
+
+                <button type="submit" class="bc-btn bc-btn-primary bc-btn-sm">
+                    <i class="bi bi-search"></i>
+                    <span th:text="#{common.filter}">Filter</span>
+                </button>
+                <a href="/web/reports/purchase" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-x-circle"></i>
+                    <span th:text="#{common.reset}">Reset</span>
+                </a>
+            </form>
+
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <i class="bi bi-calendar3"></i>
+                <span th:text="${#temporals.format(report.from, 'dd MMM yyyy')}"></span>
+                <span> → </span>
+                <span th:text="${#temporals.format(report.to, 'dd MMM yyyy')}"></span>
+            </div>
+        </div>
+
+        <!-- ============ KPI CARDS ============ -->
+        <div class="bc-stats" style="padding:16px 24px 0;">
+
+            <!-- Total Purchase -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon blue"><i class="bi bi-cart-check"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(report.totalPurchase, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{pr.total.purchase}">Total Purchase</div>
+                </div>
+            </div>
+
+            <!-- Total Paid -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon green"><i class="bi bi-check-circle"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(report.totalPaid, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{pr.total.paid}">Total Paid</div>
+                </div>
+            </div>
+
+            <!-- Outstanding -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon red"><i class="bi bi-hourglass-split"></i></div>
+                <div>
+                    <div class="bc-stat-value"
+                        th:styleappend="${report.totalOutstanding > 0} ? 'color:var(--bc-danger);' : ''"
+                        th:text="'Rp ' + ${#numbers.formatDecimal(report.totalOutstanding, 0, 'COMMA', 0, 'POINT')}">
+                        Rp 0
+                    </div>
+                    <div class="bc-stat-label" th:text="#{pr.total.outstanding}">Outstanding AP</div>
+                </div>
+            </div>
+
+            <!-- Total Invoices -->
+            <div class="bc-stat-card">
+                <div class="bc-stat-icon orange"><i class="bi bi-receipt"></i></div>
+                <div>
+                    <div class="bc-stat-value" th:text="${report.totalInvoices}">0</div>
+                    <div class="bc-stat-label" th:text="#{pr.total.invoices}">Invoices</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ CHART ============ -->
+        <div class="bc-card" style="margin:16px 24px 0;">
+            <div class="bc-card-header">
+                <span>
+                    <i class="bi bi-graph-up" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{pr.daily.chart}">Daily Purchase</span>
+                </span>
+            </div>
+            <div class="bc-card-body" style="height:300px;">
+                <canvas id="purchaseDailyChart"></canvas>
+            </div>
+        </div>
+
+        <!-- ============ TOP VENDORS TABLE ============ -->
+        <div class="bc-card" style="margin:16px 24px 24px;">
+            <div class="bc-card-header">
+                <span>
+                    <i class="bi bi-truck" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{pr.top.vendors}">Top Vendors</span>
+                </span>
+                <span class="bc-badge bc-badge-info" th:text="${report.topVendors.size()} + ' vendor'"></span>
+            </div>
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;text-align:center;">#</th>
+                        <th th:text="#{po.field.vendor}">Vendor</th>
+                        <th style="width:130px;text-align:right;" th:text="#{pr.invoice.count}">Invoices</th>
+                        <th style="width:200px;text-align:right;" th:text="#{pr.total.purchase}">Total Purchase</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="v, stat : ${report.topVendors}">
+                        <td style="text-align:center;color:var(--bc-text-muted);font-size:12px;"
+                            th:text="${stat.count}">1</td>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:32px;height:32px;border-radius:50%;
+                                    background:linear-gradient(135deg,#0078D4,#50E6FF);
+                                    color:#fff;display:flex;align-items:center;
+                                    justify-content:center;font-weight:600;font-size:12px;
+                                    flex-shrink:0;" th:text="${#strings.substring(v.vendorName, 0, 1).toUpperCase()}">
+                                    V
+                                </div>
+                                <strong th:text="${v.vendorName}">Vendor A</strong>
+                            </div>
+                        </td>
+                        <td style="text-align:right;">
+                            <span class="bc-badge bc-badge-secondary" th:text="${v.invoiceCount} + ' PI'"></span>
+                        </td>
+                        <td style="text-align:right;font-weight:600;color:var(--bc-primary);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(v.totalAmount, 0, 'COMMA', 0, 'POINT')}">
+                            Rp 0
+                        </td>
+                    </tr>
+                    <tr th:if="${report.topVendors.isEmpty()}">
+                        <td colspan="4">
+                            <div class="bc-empty">
+                                <i class="bi bi-truck"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+
+    <!-- =========================================================
+     SCRIPTS
+     ========================================================= -->
+    <th:block layout:fragment="scripts">
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+        <script th:inline="javascript">
+            const I18N = {
+                chartPurchase: /*[[#{pr.daily.chart}]]*/ 'Daily Purchase',
+                exportReady:   /*[[#{common.export}]]*/ 'Export',
+                exportSoon: 'coming soon'
+            };
+
+            const dailyData = /*[[${report.dailyChart}]]*/[];
+            const locale = /*[[${#locale.language}]]*/ 'id';
+
+            function fmt(n) {
+                return parseFloat(n || 0).toLocaleString(
+                    locale === 'en' ? 'en-US' : 'id-ID',
+                    { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+
+            // ============ PURCHASE DAILY CHART ============
+            if (document.getElementById('purchaseDailyChart') && dailyData.length > 0) {
+                new Chart(document.getElementById('purchaseDailyChart'), {
+                    type: 'line',
+                    data: {
+                        labels: dailyData.map(p => p.label),
+                        datasets: [{
+                            label: I18N.chartPurchase,
+                            data: dailyData.map(p => p.value),
+                            borderColor: '#107C10',
+                            backgroundColor: 'rgba(16,124,16,.15)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#107C10',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,.85)',
+                                padding: 10,
+                                callbacks: {
+                                    label: ctx => 'Rp ' + fmt(ctx.parsed.y)
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    font: { size: 10 },
+                                    maxRotation: 0,
+                                    autoSkip: true,
+                                    maxTicksLimit: 15
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#EDEBE9' },
+                                ticks: {
+                                    font: { size: 10 },
+                                    callback: v => 'Rp ' + fmt(v)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function exportCsv() {
+                alert(I18N.exportReady + ' — ' + I18N.exportSoon);
+            }
+        </script>
+    </th:block>
+
+</body>
+
+</html>

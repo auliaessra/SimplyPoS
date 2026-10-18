@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{po.new}">New PO</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="submit" form="poForm" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-check-lg"></i> <span th:text="#{common.save.draft}">Save as Draft</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="addItemLine()">
+                <i class="bi bi-plus-circle"></i> <span th:text="#{common.add.line}">Add Line</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/purchase/orders" class="bc-ribbon-btn">
+                <i class="bi bi-x-lg"></i> <span th:text="#{common.cancel}">Cancel</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-card">
+            <form id="poForm" th:action="@{/web/purchase/orders/create}" th:object="${order}" method="post">
+
+                <div class="bc-card-header">
+                    <span><i class="bi bi-cart" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{po.new}">New PO</span></span>
+                    <span class="bc-badge bc-badge-secondary" th:text="#{status.draft}">DRAFT</span>
+                </div>
+
+                <div class="bc-card-body">
+
+                    <div th:if="${isSuperAdmin}" style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{common.store}">Store</label>
+                            <select th:field="*{storeId}" class="bc-select" required>
+                                <option value="" th:text="#{common.select.store}">Select Store</option>
+                                <option th:each="s : ${stores}" th:value="${s.id}"
+                                    th:text="${s.code} + ' - ' + ${s.name}"></option>
+                            </select>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{info.superadmin.select.store}"></small>
+                        </div>
+                        <div></div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{po.field.vendor}">Vendor</label>
+                            <select th:field="*{vendorId}" class="bc-select" required>
+                                <option value="" th:text="#{common.select.vendor}">Select Vendor</option>
+                                <option th:each="v : ${vendors}" th:value="${v.id}"
+                                    th:text="${v.code} + ' - ' + ${v.name}"></option>
+                            </select>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label required" th:text="#{po.field.order.date}">Order Date</label>
+                            <input type="date" th:field="*{orderDate}" class="bc-input" required>
+                        </div>
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{po.field.expected.date}">Expected Date</label>
+                            <input type="date" th:field="*{expectedDate}" class="bc-input">
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;
+                                padding:10px 0;border-bottom:2px solid var(--bc-border);">
+                            <strong style="font-size:13px;">
+                                <i class="bi bi-list-ul" style="color:var(--bc-primary);"></i>
+                                <span th:text="#{common.item.lines}">Item Lines</span>
+                                <span class="bc-badge bc-badge-info" id="lineCountBadge"
+                                    style="margin-left:8px;">0</span>
+                            </strong>
+                            <div style="display:flex;gap:6px;">
+                                <button type="button" class="bc-btn bc-btn-default bc-btn-sm" onclick="addItemLine()">
+                                    <i class="bi bi-plus-lg"></i> <span th:text="#{common.add.line}">Add</span>
+                                </button>
+                                <button type="button" class="bc-btn bc-btn-danger bc-btn-sm" onclick="clearAllLines()">
+                                    <i class="bi bi-trash"></i> <span th:text="#{common.remove.all}">Clear</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bc-card" style="margin-top:8px;">
+                            <table class="bc-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width:40px;text-align:center;">#</th>
+                                        <th th:text="#{common.item}" style="width: 30%;">Item</th>
+                                        <th style="width:140px;text-align:right;" th:text="#{common.qty}">Qty (ML)</th>
+                                        <th style="width:180px;text-align:right;" th:text="#{common.unit.cost}">Unit
+                                            Cost
+                                        </th>
+                                        <th style="width:180px;text-align:right;" th:text="#{common.subtotal.per.line}">
+                                            Subtotal</th>
+                                        <th style="width:50px;text-align:center;">&nbsp;</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemLines"></tbody>
+                                <tfoot>
+                                    <tr style="background:var(--bc-bg-sidebar);font-weight:600;">
+                                        <td colspan="4" style="text-align:right;padding:12px;"
+                                            th:text="#{common.grand.total.label}">GRAND TOTAL</td>
+                                        <td style="text-align:right;padding:12px;font-size:15px;
+                                       color:var(--bc-primary);" id="grandTotal">Rp 0</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bc-form-group" style="margin-top:20px;">
+                        <label class="bc-label" th:text="#{common.notes}">Notes</label>
+                        <textarea th:field="*{notes}" class="bc-textarea" rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="bc-card-body"
+                    style="border-top:1px solid var(--bc-border);background:var(--bc-bg-sidebar);">
+                    <div class="bc-form-actions" style="margin:0;padding:0;border:none;
+                            display:flex;justify-content:space-between;align-items:center;">
+                        <div style="display:flex;gap:8px;">
+                            <button type="submit" class="bc-btn bc-btn-primary">
+                                <i class="bi bi-check-lg"></i> <span th:text="#{common.save.draft}">Save Draft</span>
+                            </button>
+                            <a href="/web/purchase/orders" class="bc-btn bc-btn-default">
+                                <i class="bi bi-x-lg"></i> <span th:text="#{common.cancel}">Cancel</span>
+                            </a>
+                        </div>
+                        <div style="font-size:12px;color:var(--bc-text-secondary);">
+                            <i class="bi bi-info-circle"></i>
+                            <span th:text="#{info.po.created.as.draft}">PO will be created as DRAFT.</span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            // ============ i18n messages for JS ============
+            const MSG = {
+                selectItem: /*[[#{common.select.item}]]*/ 'Select Item',
+                minimumLine: /*[[#{info.po.minimum.line}]]*/ 'Minimum 1 item line required.',
+                confirmDelete: /*[[#{common.confirm.delete}]]*/ 'Delete this line?',
+                currencyPrefix: /*[[#{common.currency.prefix}]]*/ 'Rp'
+            };
+
+            const itemsCatalog = /*[[${items}]]*/[];
+            let lineIndex = 0;
+
+            function addItemLine() {
+                const tbody = document.getElementById('itemLines');
+                const idx = lineIndex++;
+                const itemOptions = itemsCatalog.map(i =>
+                    `<option value="${i.id}">${i.code} - ${i.name}</option>`).join('');
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+            <td style="text-align:center;color:var(--bc-text-muted);font-size:12px;" class="line-number"></td>
+            <td>
+                <select name="items[${idx}].itemId" class="bc-select item-select" required>
+                    <option value="">${MSG.selectItem}</option>
+                    ${itemOptions}
+                </select>
+            </td>
+            <td><input type="number" step="0.001" min="0.001" name="items[${idx}].qtyMl"
+                       class="bc-input qty-input" style="text-align:right;" required oninput="recalcRow(this)"></td>
+            <td>
+                <div style="position:relative;">
+                    <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);
+                                 color:var(--bc-text-secondary);font-size:12px;pointer-events:none;">${MSG.currencyPrefix}</span>
+                    <input type="number" step="0.01" min="0.01" name="items[${idx}].unitCost"
+                           class="bc-input cost-input" style="text-align:right;padding-left:32px;" required oninput="recalcRow(this)">
+                </div>
+            </td>
+            <td style="text-align:right;font-weight:600;color:var(--bc-primary);" class="line-subtotal">Rp 0</td>
+            <td style="text-align:center;">
+                <button type="button" class="bc-btn bc-btn-danger bc-btn-sm" onclick="removeLine(this)">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </td>`;
+                tbody.appendChild(tr);
+                updateLineNumbers();
+                recalcAll();
+            }
+
+            function removeLine(btn) {
+                if (!confirm(MSG.confirmDelete)) return;
+                btn.closest('tr').remove();
+                updateLineNumbers();
+                recalcAll();
+            }
+
+            function clearAllLines() {
+                if (!confirm(MSG.confirmDelete)) return;
+                document.getElementById('itemLines').innerHTML = '';
+                lineIndex = 0;
+                updateLineNumbers();
+                recalcAll();
+            }
+
+            function recalcRow(input) {
+                const row = input.closest('tr');
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const cost = parseFloat(row.querySelector('.cost-input').value) || 0;
+                row.querySelector('.line-subtotal').textContent =
+                    MSG.currencyPrefix + ' ' + (qty * cost).toLocaleString('id-ID', { maximumFractionDigits: 2 });
+                recalcAll();
+            }
+
+            function recalcAll() {
+                let grand = 0;
+                document.querySelectorAll('#itemLines tr').forEach(row => {
+                    const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                    const cost = parseFloat(row.querySelector('.cost-input').value) || 0;
+                    grand += qty * cost;
+                });
+                document.getElementById('grandTotal').textContent =
+                    MSG.currencyPrefix + ' ' + grand.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+            }
+
+            function updateLineNumbers() {
+                const rows = document.querySelectorAll('#itemLines tr');
+                rows.forEach((row, i) => row.querySelector('.line-number').textContent = i + 1);
+                document.getElementById('lineCountBadge').textContent = rows.length;
+            }
+
+            document.getElementById('poForm').addEventListener('submit', function (e) {
+                if (document.querySelectorAll('#itemLines tr').length === 0) {
+                    e.preventDefault();
+                    alert(MSG.minimumLine);
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                addItemLine();
+            });
+        </script>
+    </th:block>
+</body>
+
+</html>

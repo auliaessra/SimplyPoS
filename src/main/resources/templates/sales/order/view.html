@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{so.title}">SO Detail</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <form th:if="${order.status == 'COMPLETED'}" th:action="@{/web/sales/orders/void/{id}(id=${order.id})}"
+                method="post" style="display:inline;" th:attr="data-confirm=#{so.void.msg}">
+                <button type="submit" class="bc-ribbon-btn bc-danger">
+                    <i class="bi bi-x-circle"></i>
+                    <span th:text="#{so.action.void}">Void Order</span>
+                </button>
+            </form>
+
+            <a th:if="${order.status == 'COMPLETED' and order.paymentMethod == 'CREDIT'}"
+                th:href="@{/web/sales/customer-payments/create(soId=${order.id})}" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-cash-stack"></i>
+                <span th:text="#{cp.new}">Receive Payment</span>
+            </a>
+
+            <div class="bc-ribbon-divider"></div>
+
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+                <span th:text="#{common.print}">Print</span>
+            </button>
+
+            <div class="bc-ribbon-divider"></div>
+
+            <a href="/web/sales/orders" class="bc-ribbon-btn">
+                <i class="bi bi-arrow-left"></i>
+                <span th:text="#{common.back.list}">Back</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header" style="padding:20px 24px;">
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <div style="width:48px;height:48px;border-radius:8px;
+                            background:linear-gradient(135deg,#0078D4,#50E6FF);
+                            display:flex;align-items:center;justify-content:center;
+                            color:#fff;font-size:22px;">
+                        <i class="bi bi-receipt-cutoff"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--bc-text-secondary);
+                                text-transform:uppercase;letter-spacing:.5px;" th:text="#{so.title}">Sales Order</div>
+                        <h1 style="margin:2px 0 0;font-size:22px;font-weight:600;" th:text="${order.orderNo}">SO0001
+                        </h1>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span th:if="${order.status == 'COMPLETED'}" class="bc-badge bc-badge-success"
+                        style="padding:6px 12px;" th:text="#{status.completed}">COMPLETED</span>
+                    <span th:if="${order.status == 'VOID'}" class="bc-badge bc-badge-danger" style="padding:6px 12px;"
+                        th:text="#{status.void}">VOID</span>
+
+                    <span th:if="${order.paymentMethod == 'CASH'}" class="bc-badge bc-badge-success"
+                        style="padding:6px 12px;">
+                        <i class="bi bi-cash"></i>
+                        <span th:text="#{payment.cash}">CASH</span>
+                    </span>
+                    <span th:if="${order.paymentMethod == 'QRIS'}" class="bc-badge bc-badge-info"
+                        style="padding:6px 12px;">
+                        <i class="bi bi-qr-code"></i> QRIS
+                    </span>
+                    <span th:if="${order.paymentMethod == 'CREDIT'}" class="bc-badge bc-badge-warning"
+                        style="padding:6px 12px;">
+                        <i class="bi bi-clock-history"></i>
+                        <span th:text="#{payment.credit}">CREDIT</span>
+                    </span>
+
+                    <span class="bc-badge bc-badge-info" style="padding:6px 12px;"
+                        th:text="${order.storeName}">Pusat</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;
+                padding:0 24px;margin-top:16px;">
+
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span><i class="bi bi-person" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{info.customer}">Customer</span></span>
+                </div>
+                <div class="bc-card-body">
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{so.field.customer}">Customer</div>
+                        <div class="bc-info-value">
+                            <span th:if="${order.customerName != null}" th:text="${order.customerName}"></span>
+                            <span th:if="${order.customerName == null}"
+                                style="color:var(--bc-text-muted);font-style:italic;"
+                                th:text="#{common.customer.walkin}">Walk-in</span>
+                        </div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.store}">Store</div>
+                        <div class="bc-info-value" th:text="${order.storeName}"></div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.your.role}">Cashier</div>
+                        <div class="bc-info-value" th:text="${order.createdBy} ?: '-'"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span><i class="bi bi-calendar-event" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{info.transaction}">Transaction Info</span></span>
+                </div>
+                <div class="bc-card-body">
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{so.field.order.number}">Order No</div>
+                        <div class="bc-info-value" style="font-weight:600;color:var(--bc-primary);"
+                            th:text="${order.orderNo}"></div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{so.field.order.date}">Date</div>
+                        <div class="bc-info-value" th:text="${order.orderDate != null} ?
+                                  ${#temporals.format(order.orderDate, 'dd MMMM yyyy HH:mm')} : '-'"></div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{so.field.payment.method}">Payment Method</div>
+                        <div class="bc-info-value" th:text="${order.paymentMethod}"></div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.created}">Created</div>
+                        <div class="bc-info-value" th:text="${order.createdAt != null} ?
+                                  ${#temporals.format(order.createdAt, 'dd MMM yyyy HH:mm')} : '-'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header">
+                <span><i class="bi bi-list-ul" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{common.item.lines}">Item Lines</span></span>
+                <span class="bc-badge bc-badge-info" th:text="${order.items.size()} + ' item'"></span>
+            </div>
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;text-align:center;">#</th>
+                        <th style="width:140px;" th:text="#{items.field.code}">Code</th>
+                        <th th:text="#{items.field.name}">Name</th>
+                        <th style="width:130px;text-align:right;" th:text="#{common.qty}">Qty (ML)</th>
+                        <th style="width:170px;text-align:right;" th:text="#{common.unit.price}">Unit Price</th>
+                        <th style="width:100px;text-align:right;" th:text="#{common.discount}">Disc (%)</th>
+                        <th style="width:170px;text-align:right;" th:text="#{common.subtotal.per.line}">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="it, stat : ${order.items}">
+                        <td style="text-align:center;color:var(--bc-text-muted);font-size:12px;"
+                            th:text="${stat.count}"></td>
+                        <td><strong style="color:var(--bc-primary);" th:text="${it.itemCode}"></strong></td>
+                        <td th:text="${it.itemName}"></td>
+                        <td style="text-align:right;"
+                            th:text="${#numbers.formatDecimal(it.qtyMl, 0, 'COMMA', 3, 'POINT')}"></td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(it.unitPrice, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;">
+                            <span th:if="${it.discountPercent != null and it.discountPercent > 0}"
+                                class="bc-badge bc-badge-warning"
+                                th:text="${#numbers.formatDecimal(it.discountPercent, 0, 'COMMA', 2, 'POINT')} + '%'"></span>
+                            <span th:unless="${it.discountPercent != null and it.discountPercent > 0}"
+                                style="color:var(--bc-text-muted);">-</span>
+                        </td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(it.totalPrice, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                    <tr th:if="${order.items.isEmpty()}">
+                        <td colspan="7">
+                            <div class="bc-empty">
+                                <i class="bi bi-inbox"></i>
+                                <div th:text="#{common.no.items}">No items</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px;">
+            <div class="bc-card" style="margin:0;" th:if="${order.notes != null and !order.notes.isEmpty()}">
+                <div class="bc-card-header">
+                    <span><i class="bi bi-chat-left-text" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{common.notes}">Notes</span></span>
+                </div>
+                <div class="bc-card-body">
+                    <div style="white-space:pre-wrap;font-size:13px;" th:text="${order.notes}"></div>
+                </div>
+            </div>
+            <div th:if="${order.notes == null or order.notes.isEmpty()}"></div>
+
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span><i class="bi bi-calculator" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{common.total}">Summary</span></span>
+                </div>
+                <div class="bc-card-body">
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.subtotal}">Subtotal</div>
+                        <div class="bc-info-value" style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(order.subtotal, 0, 'COMMA', 2, 'POINT')}"></div>
+                    </div>
+                    <div class="bc-info-row" th:if="${order.discountAmount != null and order.discountAmount > 0}">
+                        <div class="bc-info-label" style="color:var(--bc-danger);" th:text="#{common.discount}">Discount
+                        </div>
+                        <div class="bc-info-value" style="text-align:right;color:var(--bc-danger);"
+                            th:text="'- Rp ' + ${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 2, 'POINT')}">
+                        </div>
+                    </div>
+                    <div class="bc-info-row" th:if="${order.taxAmount != null and order.taxAmount > 0}">
+                        <div class="bc-info-label" th:text="#{common.tax}">Tax</div>
+                        <div class="bc-info-value" style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(order.taxAmount, 0, 'COMMA', 2, 'POINT')}"></div>
+                    </div>
+                    <div class="bc-info-row" style="border-top:2px solid var(--bc-border);border-bottom:1px solid var(--bc-border);
+                            padding:12px 0;margin-top:4px;">
+                        <div class="bc-info-label" style="font-weight:600;font-size:13px;"
+                            th:text="#{common.grand.total}">TOTAL</div>
+                        <div class="bc-info-value" style="text-align:right;font-weight:700;font-size:16px;
+                                color:var(--bc-primary);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 2, 'POINT')}">
+                        </div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{so.field.paid}">Paid</div>
+                        <div class="bc-info-value" style="text-align:right;color:var(--bc-success);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(order.paidAmount, 0, 'COMMA', 2, 'POINT')}"></div>
+                    </div>
+                    <div class="bc-info-row" th:if="${order.paymentMethod != 'CREDIT'}">
+                        <div class="bc-info-label" th:text="#{so.field.change}">Change</div>
+                        <div class="bc-info-value" style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(order.changeAmount, 0, 'COMMA', 2, 'POINT')}">
+                        </div>
+                    </div>
+                    <div class="bc-info-row" th:if="${order.paymentMethod == 'CREDIT'}"
+                        th:with="outstanding=${order.totalAmount - order.paidAmount}">
+                        <div class="bc-info-label" style="font-weight:600;color:var(--bc-danger);"
+                            th:text="#{pi.field.outstanding}">Outstanding</div>
+                        <div class="bc-info-value" style="text-align:right;font-weight:700;color:var(--bc-danger);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(outstanding, 0, 'COMMA', 2, 'POINT')}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;margin-bottom:24px;" th:if="${order.status == 'COMPLETED'}">
+            <div class="bc-card-header">
+                <span><i class="bi bi-book" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{info.posting}">Accounting Posting</span></span>
+                <span class="bc-badge bc-badge-success" th:text="#{status.posted}">POSTED</span>
+            </div>
+            <div class="bc-card" style="padding:0;">
+                <table class="bc-table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{info.account}">Account</th>
+                            <th style="width:100px;" th:text="#{common.status.detail}">Type</th>
+                            <th style="width:180px;text-align:right;" th:text="#{common.total}">Debit</th>
+                            <th style="width:180px;text-align:right;" th:text="#{common.total}">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <strong th:if="${order.paymentMethod == 'CASH'}">1101</strong>
+                                <strong th:if="${order.paymentMethod == 'QRIS'}">1102</strong>
+                                <strong th:if="${order.paymentMethod == 'CREDIT'}">1201</strong>
+                                –
+                                <span th:if="${order.paymentMethod == 'CASH'}">Kas / Cash</span>
+                                <span th:if="${order.paymentMethod == 'QRIS'}">Bank</span>
+                                <span th:if="${order.paymentMethod == 'CREDIT'}">Piutang Usaha / AR</span>
+                            </td>
+                            <td><span class="bc-badge bc-badge-info">ASSET</span></td>
+                            <td style="text-align:right;font-weight:600;color:var(--bc-primary);"
+                                th:text="'Rp ' + ${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 2, 'POINT')}">
+                            </td>
+                            <td style="text-align:right;color:var(--bc-text-muted);">-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>4101</strong> – Penjualan / Sales</td>
+                            <td><span class="bc-badge bc-badge-success">REVENUE</span></td>
+                            <td style="text-align:right;color:var(--bc-text-muted);">-</td>
+                            <td style="text-align:right;font-weight:600;color:var(--bc-success);"
+                                th:text="'Rp ' + ${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 2, 'POINT')}">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="bc-card-body" style="border-top:1px solid var(--bc-border);background:var(--bc-bg-sidebar);
+                    font-size:12px;color:var(--bc-text-secondary);">
+                <i class="bi bi-info-circle"></i>
+                <span th:text="#{gl.posting.info}">Posted automatically.</span>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;margin-bottom:24px;" th:if="${order.status == 'VOID'}">
+            <div class="bc-card-header">
+                <span><i class="bi bi-x-octagon" style="color:var(--bc-danger);"></i>
+                    <span th:text="#{status.void}">Void</span></span>
+                <span class="bc-badge bc-badge-danger" th:text="#{status.void}">VOID</span>
+            </div>
+            <div class="bc-card-body" style="font-size:13px;color:var(--bc-text-secondary);"
+                th:text="#{info.void.info}"></div>
+        </div>
+
+    </th:block>
+
+</body>
+
+</html>

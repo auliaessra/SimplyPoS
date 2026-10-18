@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{pos.title}">Point of Sale</title>
+</head>
+
+<body>
+
+    <!-- =========================================================
+     RIBBON
+     ========================================================= -->
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="button" class="bc-ribbon-btn bc-primary" onclick="submitPOS()">
+                <i class="bi bi-check-lg"></i>
+                <span class="btn-label" th:text="#{pos.complete}">Complete Sale</span>
+            </button>
+            <button type="button" class="bc-ribbon-btn" onclick="clearCart()">
+                <i class="bi bi-x-circle"></i>
+                <span class="btn-label" th:text="#{pos.clear}">Clear Cart</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+                <span class="btn-label" th:text="#{common.print}">Print</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span class="btn-label" th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <!-- =========================================================
+     CONTENT
+     ========================================================= -->
+    <th:block layout:fragment="content">
+        <div class="bc-pos-layout">
+
+            <!-- ============ LEFT: Product Catalog ============ -->
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-box-seam" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{pos.catalog}">Product Catalog</span>
+                    </span>
+                    <input type="text" id="searchProduct" class="bc-input" th:placeholder="#{pos.search}"
+                        style="max-width:280px;height:30px;">
+                </div>
+                <div class="bc-card-body pos-product-grid" id="productGrid" style="display:grid;
+                    grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+                    gap:12px;max-height:calc(100vh - 280px);overflow-y:auto;">
+                    <!-- Product cards di-generate JavaScript -->
+                </div>
+            </div>
+
+            <!-- ============ RIGHT: Cart ============ -->
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span>
+                        <i class="bi bi-cart" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{pos.cart}">Cart</span>
+                    </span>
+                    <span class="bc-badge bc-badge-info" id="cartCountBadge">0</span>
+                </div>
+
+                <div class="bc-card-body" style="padding:0;">
+
+                    <!-- Customer & Payment Method -->
+                    <div style="padding:12px 16px;border-bottom:1px solid var(--bc-border);">
+                        <div class="bc-form-group" style="margin-bottom:8px;">
+                            <label class="bc-label" style="font-size:11px;" th:text="#{pos.customer}">Customer (for
+                                CREDIT)</label>
+                            <select id="customerSelect" class="bc-select" style="height:32px;font-size:12px;">
+                                <option value="" th:text="#{pos.walkin}">Walk-in Customer</option>
+                                <option th:each="c : ${customers}" th:value="${c.id}"
+                                    th:text="${c.code} + ' - ' + ${c.name}"></option>
+                            </select>
+                        </div>
+
+                        <div class="bc-form-group" style="margin-bottom:0;">
+                            <label class="bc-label" style="font-size:11px;" th:text="#{so.field.payment.method}">Payment
+                                Method</label>
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+                                <button type="button" class="bc-btn bc-btn-default bc-btn-sm pos-method"
+                                    data-method="CASH" style="justify-content:center;">
+                                    <i class="bi bi-cash"></i>
+                                    <span th:text="#{payment.cash}">Cash</span>
+                                </button>
+                                <button type="button" class="bc-btn bc-btn-default bc-btn-sm pos-method"
+                                    data-method="QRIS" style="justify-content:center;">
+                                    <i class="bi bi-qr-code"></i>
+                                    <span>QRIS</span>
+                                </button>
+                                <button type="button" class="bc-btn bc-btn-default bc-btn-sm pos-method"
+                                    data-method="CREDIT" style="justify-content:center;">
+                                    <i class="bi bi-clock-history"></i>
+                                    <span th:text="#{payment.credit}">Credit</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cart Items -->
+                    <div id="cartItems" style="min-height:200px;max-height:340px;overflow-y:auto;">
+                        <div id="cartEmpty" style="padding:32px;text-align:center;
+                            color:var(--bc-text-muted);font-size:12px;">
+                            <i class="bi bi-cart-x" style="font-size:36px;display:block;
+                                                  margin-bottom:8px;"></i>
+                            <span th:text="#{pos.cart.empty}">Cart is empty</span>
+                        </div>
+                    </div>
+
+                    <!-- Totals -->
+                    <div class="pos-cart-total" style="padding:12px 16px;border-top:1px solid var(--bc-border);
+                        background:var(--bc-bg-sidebar);">
+                        <div style="display:flex;justify-content:space-between;
+                            font-size:12px;padding:3px 0;">
+                            <span th:text="#{common.subtotal}">Subtotal</span>
+                            <span id="cartSubtotal">Rp 0</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;
+                            font-size:12px;padding:3px 0;">
+                            <span th:text="#{common.discount}">Discount</span>
+                            <span id="cartDiscount" style="color:var(--bc-danger);">Rp 0</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;
+                            padding:8px 0;margin-top:8px;
+                            border-top:2px solid var(--bc-border-strong);
+                            font-weight:700;font-size:16px;
+                            color:var(--bc-primary);">
+                            <span th:text="#{pos.total}">TOTAL</span>
+                            <span id="cartTotal">Rp 0</span>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;
+                            margin-top:8px;">
+                            <div>
+                                <label class="bc-label" style="font-size:11px;" th:text="#{pos.paid.amount}">Paid
+                                    Amount</label>
+                                <input type="number" id="paidInput" class="bc-input"
+                                    style="text-align:right;height:32px;" value="0">
+                            </div>
+                            <div>
+                                <label class="bc-label" style="font-size:11px;" th:text="#{pos.change}">Change</label>
+                                <input type="text" id="changeDisplay" class="bc-input" style="text-align:right;height:32px;
+                                      background:var(--bc-bg-app);" readonly value="Rp 0">
+                            </div>
+                        </div>
+
+                        <button type="button" class="bc-btn bc-btn-primary" style="width:100%;justify-content:center;
+                               margin-top:12px;padding:10px;" onclick="submitPOS()">
+                            <i class="bi bi-check-circle"></i>
+                            <span th:text="#{pos.process}">Process Transaction</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+
+    <!-- =========================================================
+     SCRIPTS
+     ========================================================= -->
+    <th:block layout:fragment="scripts">
+        <script th:inline="javascript">
+            // ============================================================
+            // i18n Messages
+            // ============================================================
+            const I18N = {
+                noProduct:        /*[[#{common.no.data}]]*/ 'No data',
+                cartEmpty:        /*[[#{pos.cart.empty}]]*/ 'Cart is empty',
+                cartEmptyAlert:   /*[[#{pos.cart.empty}]]*/ 'Cart is empty',
+                stockInsufficient:    /*[[#{error.stock.insufficient}]]*/ 'Insufficient stock',
+                stockAvailable:       /*[[#{store.price.field.stock}]]*/ 'Stock',
+                creditNeedsCustomer:  /*[[#{error.credit.needs.customer}]]*/ 'CREDIT requires customer',
+                paymentInsufficient:  /*[[#{error.payment.insufficient}]]*/ 'Payment is less than total',
+                confirmProcess:   /*[[#{common.confirm}]]*/ 'Process this transaction?',
+                confirmClear:     /*[[#{common.confirm.delete}]]*/ 'Clear cart?',
+                txSuccess:        /*[[#{status.completed}]]*/ 'Transaction successful',
+                orderNo:          /*[[#{so.field.order.number}]]*/ 'Order No',
+                totalLabel:       /*[[#{common.total}]]*/ 'Total',
+                changeLabel:      /*[[#{pos.change}]]*/ 'Change',
+                errorLabel:       /*[[#{error.generic}]]*/ 'Error',
+                currencyPrefix:   /*[[#{common.currency.prefix}]]*/ 'Rp',
+                locale:           /*[[${#locale.language}]]*/ 'id',
+                defaultUnit: 'ML'   // ← fallback default
+            };
+
+            // ============================================================
+            // Data dari server
+            // ============================================================
+            const productsData = /*[[${products}]]*/[];
+            const storeId = /*[[${selectedStoreId}]]*/ null;
+
+            // ============================================================
+            // State
+            // ============================================================
+            let cart = [];
+            let paymentMethod = 'CASH';
+
+            // ============================================================
+            // HELPER: Ambil unit dari produk / cart item
+            // ============================================================
+            function getUnit(item) {
+                if (!item) return I18N.defaultUnit;
+                return (item.unitCode && item.unitCode.trim()) || I18N.defaultUnit;
+            }
+
+            // ============================================================
+            // RENDER PRODUCTS
+            // ============================================================
+            function renderProducts(filter) {
+                const grid = document.getElementById('productGrid');
+                const q = (filter || '').toLowerCase();
+
+                const filtered = productsData.filter(p =>
+                    !q ||
+                    (p.itemCode && p.itemCode.toLowerCase().includes(q)) ||
+                    (p.itemName && p.itemName.toLowerCase().includes(q))
+                );
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = `
+                <div style="grid-column:1/-1;padding:32px;text-align:center;
+                            color:var(--bc-text-muted);font-size:12px;">
+                    <i class="bi bi-inbox" style="font-size:32px;display:block;
+                                                  margin-bottom:8px;"></i>
+                    ${escapeHtml(I18N.noProduct)}
+                </div>`;
+                    return;
+                }
+
+                grid.innerHTML = filtered.map(p => {
+                    const stockLow = p.stockQtyMl <= (p.minStockMl || 0);
+                    // ✅ Ambil unit dinamis dari produk
+                    const unit = getUnit(p);
+
+                    return `
+            <div class="product-card" data-id="${p.itemId}"
+                 style="border:1px solid var(--bc-border);border-radius:6px;
+                        padding:12px;cursor:pointer;
+                        transition:all .15s;background:#fff;">
+                <div style="width:100%;height:60px;border-radius:4px;
+                            background:linear-gradient(135deg,
+                                rgba(0,120,212,.1),rgba(80,230,255,.15));
+                            display:flex;align-items:center;justify-content:center;
+                            color:var(--bc-primary);font-size:24px;margin-bottom:8px;">
+                    <i class="bi bi-droplet-fill"></i>
+                </div>
+                <div style="font-weight:600;font-size:12px;color:var(--bc-text);
+                            margin-bottom:2px;white-space:nowrap;overflow:hidden;
+                            text-overflow:ellipsis;">
+                    ${escapeHtml(p.itemName)}
+                </div>
+                <div style="font-size:10px;color:var(--bc-text-secondary);
+                            margin-bottom:6px;">
+                    ${escapeHtml(p.itemCode)}
+                </div>
+                <div style="display:flex;justify-content:space-between;
+                            align-items:center;">
+                    <div style="font-weight:700;color:var(--bc-primary);font-size:13px;">
+                        ${I18N.currencyPrefix} ${formatNumber(p.sellPrice)}
+                    </div>
+                    <div style="font-size:10px;
+                                color:${stockLow ? 'var(--bc-danger)' : 'var(--bc-text-secondary)'};">
+                        ${formatNumber(p.stockQtyMl, 0)} ${escapeHtml(unit)}
+                    </div>
+                </div>
+            </div>`;
+                }).join('');
+
+                grid.querySelectorAll('.product-card').forEach(el => {
+                    el.addEventListener('mouseenter', () => {
+                        el.style.boxShadow = 'var(--bc-shadow-2)';
+                        el.style.borderColor = 'var(--bc-primary)';
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        el.style.boxShadow = '';
+                        el.style.borderColor = 'var(--bc-border)';
+                    });
+                    el.addEventListener('click', () => addToCart(parseInt(el.dataset.id)));
+                });
+            }
+
+            // ============================================================
+            // ADD TO CART
+            // ============================================================
+            function addToCart(itemId) {
+                const p = productsData.find(x => x.itemId === itemId);
+                if (!p) return;
+
+                const unit = getUnit(p);
+
+                const existing = cart.find(c => c.itemId === itemId);
+                if (existing) {
+                    if (existing.qtyMl + 1 > p.stockQtyMl) {
+                        alert(I18N.stockInsufficient
+                            + '\n' + I18N.stockAvailable + ': '
+                            + formatNumber(p.stockQtyMl, 0) + ' ' + unit);
+                        return;
+                    }
+                    existing.qtyMl += 1;
+                } else {
+                    cart.push({
+                        itemId: p.itemId,
+                        itemCode: p.itemCode,
+                        itemName: p.itemName,
+                        qtyMl: 1,
+                        unitPrice: p.sellPrice,
+                        discountPercent: 0,
+                        maxStock: p.stockQtyMl,
+                        unitCode: unit           // ← simpan unit di cart item
+                    });
+                }
+                renderCart();
+            }
+
+            // ============================================================
+            // RENDER CART
+            // ============================================================
+            function renderCart() {
+                const container = document.getElementById('cartItems');
+                const badge = document.getElementById('cartCountBadge');
+
+                // ============ EMPTY CART ============
+                if (cart.length === 0) {
+                    container.innerHTML = `
+                <div id="cartEmpty"
+                     style="padding:32px;text-align:center;
+                            color:var(--bc-text-muted);font-size:12px;">
+                    <i class="bi bi-cart-x" style="font-size:36px;display:block;
+                                                  margin-bottom:8px;"></i>
+                    <span>${escapeHtml(I18N.cartEmpty)}</span>
+                </div>`;
+                    if (badge) badge.textContent = '0';
+                    updateTotals();
+                    return;
+                }
+
+                // ============ CART HAS ITEMS ============
+                container.innerHTML = cart.map((c, i) => {
+                    // ✅ Ambil unit dari cart item
+                    const unit = getUnit(c);
+
+                    return `
+            <div style="padding:10px 14px;border-bottom:1px solid var(--bc-border);">
+                <div style="display:flex;justify-content:space-between;
+                            align-items:start;margin-bottom:6px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;font-size:12px;
+                                    color:var(--bc-text);">
+                            ${escapeHtml(c.itemName)}
+                        </div>
+                        <div style="font-size:10px;color:var(--bc-text-secondary);">
+                            ${escapeHtml(c.itemCode)} ·
+                            ${I18N.currencyPrefix} ${formatNumber(c.unitPrice)}/${escapeHtml(unit)}
+                        </div>
+                    </div>
+                    <button type="button" class="bc-btn bc-btn-danger bc-btn-sm"
+                            onclick="removeFromCart(${i})"
+                            style="padding:2px 6px;">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <input type="number" step="0.001" min="0.001" max="${c.maxStock}"
+                           value="${c.qtyMl}"
+                           style="width:80px;height:28px;font-size:12px;
+                                  text-align:right;padding:0 6px;
+                                  border:1px solid var(--bc-border-strong);
+                                  border-radius:4px;"
+                           onchange="updateQty(${i}, this.value)">
+                    <span style="font-size:10px;color:var(--bc-text-secondary);">
+                        ${escapeHtml(unit)}
+                    </span>
+                    <div style="margin-left:auto;font-weight:700;
+                                color:var(--bc-primary);font-size:13px;">
+                        ${I18N.currencyPrefix}
+                        ${formatNumber(c.qtyMl * c.unitPrice)}
+                    </div>
+                </div>
+            </div>`;
+                }).join('');
+
+                if (badge) badge.textContent = cart.length;
+                updateTotals();
+            }
+
+            function removeFromCart(idx) {
+                cart.splice(idx, 1);
+                renderCart();
+            }
+
+            function updateQty(idx, val) {
+                const q = parseFloat(val) || 0;
+                if (q <= 0) { removeFromCart(idx); return; }
+                if (q > cart[idx].maxStock) {
+                    const unit = getUnit(cart[idx]);
+                    alert(I18N.stockInsufficient
+                        + ' (' + I18N.stockAvailable + ': '
+                        + cart[idx].maxStock + ' ' + unit + ')');
+                    renderCart();
+                    return;
+                }
+                cart[idx].qtyMl = q;
+                renderCart();
+            }
+
+            // ============================================================
+            // UPDATE TOTALS
+            // ============================================================
+            function updateTotals() {
+                let subtotal = 0;
+                let discount = 0;
+
+                cart.forEach(c => {
+                    const gross = c.qtyMl * c.unitPrice;
+                    const disc = gross * (c.discountPercent || 0) / 100;
+                    subtotal += gross;
+                    discount += disc;
+                });
+
+                const total = subtotal - discount;
+
+                const subEl = document.getElementById('cartSubtotal');
+                const discEl = document.getElementById('cartDiscount');
+                const totalEl = document.getElementById('cartTotal');
+                const paidEl = document.getElementById('paidInput');
+                const changeEl = document.getElementById('changeDisplay');
+
+                if (subEl) subEl.textContent = I18N.currencyPrefix + ' ' + formatNumber(subtotal);
+                if (discEl) discEl.textContent = I18N.currencyPrefix + ' ' + formatNumber(discount);
+                if (totalEl) totalEl.textContent = I18N.currencyPrefix + ' ' + formatNumber(total);
+
+                const paid = parseFloat(paidEl?.value) || 0;
+                const change = paid - total;
+                if (changeEl) {
+                    changeEl.value = I18N.currencyPrefix + ' ' + formatNumber(Math.max(0, change));
+                }
+
+                return total;
+            }
+
+            // ============================================================
+            // PAYMENT METHOD
+            // ============================================================
+            const paidInputEl = document.getElementById('paidInput');
+            if (paidInputEl) {
+                paidInputEl.addEventListener('input', updateTotals);
+            }
+
+            document.querySelectorAll('.pos-method').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    paymentMethod = this.dataset.method;
+                    document.querySelectorAll('.pos-method').forEach(b => {
+                        b.classList.remove('bc-btn-primary');
+                        b.classList.add('bc-btn-default');
+                    });
+                    this.classList.remove('bc-btn-default');
+                    this.classList.add('bc-btn-primary');
+
+                    const paidInput = document.getElementById('paidInput');
+                    if (paymentMethod === 'CREDIT') {
+                        if (paidInput) {
+                            paidInput.value = 0;
+                            paidInput.disabled = true;
+                        }
+                    } else {
+                        if (paidInput) {
+                            paidInput.disabled = false;
+                        }
+                        updateTotals();
+                    }
+                });
+            });
+
+            // Default: CASH
+            const cashBtn = document.querySelector('.pos-method[data-method="CASH"]');
+            if (cashBtn) cashBtn.click();
+
+            // ============================================================
+            // SEARCH
+            // ============================================================
+            const searchEl = document.getElementById('searchProduct');
+            if (searchEl) {
+                searchEl.addEventListener('input', function () {
+                    renderProducts(this.value);
+                });
+            }
+
+            // ============================================================
+            // SUBMIT POS
+            // ============================================================
+            function submitPOS() {
+                if (cart.length === 0) {
+                    alert(I18N.cartEmptyAlert);
+                    return;
+                }
+
+                const customerEl = document.getElementById('customerSelect');
+                const customerId = customerEl?.value;
+                if (paymentMethod === 'CREDIT' && !customerId) {
+                    alert(I18N.creditNeedsCustomer);
+                    return;
+                }
+
+                const total = updateTotals();
+                const paidInput = document.getElementById('paidInput');
+                const paid = parseFloat(paidInput?.value) || 0;
+
+                if (paymentMethod !== 'CREDIT' && paid < total) {
+                    alert(I18N.paymentInsufficient);
+                    return;
+                }
+
+                if (!confirm(I18N.confirmProcess)) return;
+
+                const payload = {
+                    storeId: storeId,
+                    customerId: customerId ? parseInt(customerId) : null,
+                    paymentMethod: paymentMethod,
+                    paidAmount: paid,
+                    taxAmount: 0,
+                    items: cart.map(c => ({
+                        itemId: c.itemId,
+                        qtyMl: c.qtyMl,
+                        discountPercent: c.discountPercent
+                    }))
+                };
+
+                fetch('/web/sales/pos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(payload)
+                })
+                    .then(async res => {
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            throw new Error(err.message || ('HTTP ' + res.status));
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        alert(
+                            I18N.txSuccess + '!\n' +
+                            I18N.orderNo + ': ' + data.orderNo + '\n' +
+                            I18N.totalLabel + ': ' + I18N.currencyPrefix + ' '
+                            + formatNumber(data.totalAmount) + '\n' +
+                            I18N.changeLabel + ': ' + I18N.currencyPrefix + ' '
+                            + formatNumber(data.changeAmount)
+                        );
+
+                        cart = [];
+                        renderCart();
+                        if (paidInput) paidInput.value = 0;
+                        if (customerEl) customerEl.value = '';
+
+                        setTimeout(() => location.reload(), 500);
+                    })
+                    .catch(err => {
+                        alert(I18N.errorLabel + ': ' + err.message);
+                    });
+            }
+
+            // ============================================================
+            // CLEAR CART
+            // ============================================================
+            function clearCart() {
+                if (cart.length === 0) return;
+                if (!confirm(I18N.confirmClear)) return;
+                cart = [];
+                renderCart();
+            }
+
+            // ============================================================
+            // HELPERS
+            // ============================================================
+            function formatNumber(n, minDec) {
+                if (n === null || n === undefined) return '0';
+                return parseFloat(n).toLocaleString(
+                    I18N.locale === 'en' ? 'en-US' : 'id-ID',
+                    {
+                        minimumFractionDigits: minDec || 2,
+                        maximumFractionDigits: 2
+                    });
+            }
+
+            function escapeHtml(s) {
+                if (!s) return '';
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            // ============================================================
+            // INIT
+            // ============================================================
+            document.addEventListener('DOMContentLoaded', function () {
+                renderProducts();
+                renderCart();
+            });
+
+            // Expose to global scope untuk onclick attribute
+            window.submitPOS = submitPOS;
+            window.clearCart = clearCart;
+            window.addToCart = addToCart;
+            window.removeFromCart = removeFromCart;
+            window.updateQty = updateQty;
+        </script>
+    </th:block>
+</body>
+
+</html>

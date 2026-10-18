@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{pi.title}">Purchase Invoices</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/purchase/invoices/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-plus-lg"></i>
+                <span th:text="#{pi.new}">New PI</span>
+            </a>
+            <a href="/web/purchase/orders" class="bc-ribbon-btn">
+                <i class="bi bi-cart"></i>
+                <span th:text="#{nav.purchase.orders}">Purchase Orders</span>
+            </a>
+            <a href="/web/purchase/vendor-payments" class="bc-ribbon-btn">
+                <i class="bi bi-cash-coin"></i>
+                <span th:text="#{nav.purchase.vendor.payments}">Vendor Payments</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select" onchange="this.form.submit()">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+            </form>
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <span th:text="#{common.total}">Total</span>:
+                <strong th:text="${invoices.totalElements}">0</strong>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:150px;" th:text="#{pi.field.invoice.number}">Invoice No</th>
+                        <th th:text="#{po.field.vendor}">Vendor</th>
+                        <th th:if="${isSuperAdmin}" style="width:160px;" th:text="#{common.store}">Store</th>
+                        <th style="width:120px;" th:text="#{pi.field.invoice.date}">Date</th>
+                        <th style="width:130px;" th:text="#{pi.field.due.date}">Due Date</th>
+                        <th style="width:140px;text-align:right;" th:text="#{common.total}">Total</th>
+                        <th style="width:130px;text-align:right;" th:text="#{pi.field.paid}">Paid</th>
+                        <th style="width:110px;" th:text="#{common.status}">Status</th>
+                        <th style="width:180px;text-align:right;" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="inv : ${invoices.content}">
+                        <td>
+                            <strong style="color:var(--bc-primary);" th:text="${inv.invoiceNo}">PI0001</strong>
+                        </td>
+                        <td th:text="${inv.vendor.name}">Vendor A</td>
+                        <td th:if="${isSuperAdmin}">
+                            <span class="bc-badge bc-badge-info" th:text="${inv.store.name}">Pusat</span>
+                        </td>
+                        <td th:text="${#temporals.format(inv.invoiceDate, 'dd/MM/yyyy')}"></td>
+                        <td th:text="${inv.dueDate != null} ? ${#temporals.format(inv.dueDate, 'dd/MM/yyyy')} : '-'">-
+                        </td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(inv.totalAmount, 0, 'COMMA', 0, 'POINT')}">Rp 0
+                        </td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(inv.paidAmount, 0, 'COMMA', 0, 'POINT')}">Rp 0
+                        </td>
+                        <td>
+                            <span th:if="${inv.status == 'DRAFT'}" class="bc-badge bc-badge-secondary"
+                                th:text="#{status.draft}">DRAFT</span>
+                            <span th:if="${inv.status == 'POSTED'}" class="bc-badge bc-badge-info"
+                                th:text="#{status.posted}">POSTED</span>
+                            <span th:if="${inv.status == 'PARTIAL_PAID'}" class="bc-badge bc-badge-warning"
+                                th:text="#{status.partial.paid}">PARTIAL</span>
+                            <span th:if="${inv.status == 'PAID'}" class="bc-badge bc-badge-success"
+                                th:text="#{status.paid}">PAID</span>
+                        </td>
+                        <td style="text-align:right;">
+                            <div class="bc-table-actions" style="justify-content:flex-end;">
+                                <a th:href="@{/web/purchase/invoices/view/{id}(id=${inv.id})}"
+                                    class="bc-btn bc-btn-default bc-btn-sm" th:title="#{common.view}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <form th:if="${inv.status == 'DRAFT'}"
+                                    th:action="@{/web/purchase/invoices/post/{id}(id=${inv.id})}" method="post"
+                                    style="display:inline;" th:attr="data-confirm=#{pi.post.msg}">
+                                    <button class="bc-btn bc-btn-primary bc-btn-sm" th:title="#{pi.action.post}">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                                <form th:if="${inv.status == 'DRAFT'}"
+                                    th:action="@{/web/purchase/invoices/delete/{id}(id=${inv.id})}" method="post"
+                                    style="display:inline;" th:attr="data-confirm=#{common.confirm.delete}">
+                                    <button class="bc-btn bc-btn-danger bc-btn-sm" th:title="#{common.delete}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${invoices.content.isEmpty()}">
+                        <td th:attr="colspan=${isSuperAdmin} ? 9 : 8">
+                            <div class="bc-empty">
+                                <i class="bi bi-receipt"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                                <a href="/web/purchase/invoices/create" class="bc-btn bc-btn-primary"
+                                    style="margin-top:12px;">
+                                    <i class="bi bi-plus-lg"></i>
+                                    <span th:text="#{pi.new}">New PI</span>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="bc-pagination" th:if="${invoices.totalPages > 0}">
+                <div>
+                    <span th:text="#{common.showing}">Showing</span>
+                    <strong th:text="${invoices.number * invoices.size + 1}">1</strong> –
+                    <strong th:text="${invoices.number * invoices.size + invoices.numberOfElements}">10</strong>
+                    <span th:text="#{common.of}">of</span>
+                    <strong th:text="${invoices.totalElements}">0</strong>
+                </div>
+                <div class="bc-pagination-pages">
+                    <a th:href="@{/web/purchase/invoices(page=${invoices.number - 1}, storeId=${selectedStoreId})}"
+                        class="bc-page-link" th:classappend="${invoices.first} ? 'disabled'">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    <span class="bc-page-link active" th:text="${invoices.number + 1}">1</span>
+                    <a th:href="@{/web/purchase/invoices(page=${invoices.number + 1}, storeId=${selectedStoreId})}"
+                        class="bc-page-link" th:classappend="${invoices.last} ? 'disabled'">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </th:block>
+
+</body>
+
+</html>

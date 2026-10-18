@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml"
+    xmlns:sec="http://www.thymeleaf.org/extras/spring-security" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{users.title}">Users</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/master/users/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-person-plus"></i>
+                <span th:text="#{users.new}">New User</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select" onchange="this.form.submit()">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+
+                <input type="text" name="q" th:value="${q}" class="bc-input" th:placeholder="#{common.search} + '...'">
+
+                <button type="submit" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-search"></i>
+                    <span th:text="#{common.search}">Search</span>
+                </button>
+                <a href="/web/master/users" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-x-circle"></i>
+                    <span th:text="#{common.reset}">Reset</span>
+                </a>
+            </form>
+
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <span th:text="#{common.total}">Total</span>:
+                <strong th:text="${users.totalElements}">0</strong>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th th:text="#{users.field.fullname}">User</th>
+                        <th style="width:150px;" th:text="#{users.field.username}">Username</th>
+                        <th style="width:140px;" th:text="#{users.field.role}">Role</th>
+                        <th th:if="${isSuperAdmin}" style="width:160px;" th:text="#{common.store}">Store</th>
+                        <th style="width:200px;" th:text="#{users.field.contact}">Contact</th>
+                        <th style="width:100px;" th:text="#{common.status}">Status</th>
+                        <th style="width:180px;text-align:right;" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="u : ${users.content}">
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:36px;height:36px;border-radius:50%;
+                                    background:linear-gradient(135deg,#0078D4,#50E6FF);
+                                    color:#fff;display:flex;align-items:center;
+                                    justify-content:center;font-weight:600;
+                                    font-size:12px;flex-shrink:0;"
+                                    th:text="${#strings.substring(u.fullName, 0, 1).toUpperCase()}">
+                                    A
+                                </div>
+                                <div>
+                                    <div style="font-weight:600;" th:text="${u.fullName}"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <code style="background:var(--bc-bg-app);padding:2px 6px;
+                                 border-radius:3px;font-size:12px;" th:text="${u.username}">admin</code>
+                        </td>
+                        <td>
+                            <span class="bc-badge" th:classappend="
+                              ${u.role == 'SUPER_ADMIN' ? 'bc-badge-danger' :
+                              u.role == 'ADMIN' ? 'bc-badge-info' :
+                              u.role == 'CASHIER' ? 'bc-badge-success' :
+                              'bc-badge-secondary'}" th:text="${u.role}">ADMIN</span>
+                        </td>
+                        <td th:if="${isSuperAdmin}">
+                            <span th:if="${u.storeName != null}" class="bc-badge bc-badge-info"
+                                th:text="${u.storeName}"></span>
+                            <span th:if="${u.storeName == null}"
+                                style="color:var(--bc-text-muted);font-style:italic;">—</span>
+                        </td>
+                        <td>
+                            <div style="font-size:12px;" th:text="${u.email} ?: '-'"></div>
+                            <div style="font-size:11px;color:var(--bc-text-secondary);" th:text="${u.phone} ?: ''">
+                            </div>
+                        </td>
+                        <td>
+                            <span th:if="${u.status == 'ACTIVE'}" class="bc-badge bc-badge-success"
+                                th:text="#{common.active}">Active</span>
+                            <span th:unless="${u.status == 'ACTIVE'}" class="bc-badge bc-badge-secondary"
+                                th:text="#{common.inactive}">Inactive</span>
+                        </td>
+                        <td style="text-align:right;">
+                            <div class="bc-table-actions" style="justify-content:flex-end;">
+                                <a th:href="@{/web/master/users/edit/{id}(id=${u.id})}"
+                                    class="bc-btn bc-btn-default bc-btn-sm" th:title="#{common.edit}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:action="@{/web/master/users/toggle/{id}(id=${u.id})}" method="post"
+                                    style="display:inline;">
+                                    <button class="bc-btn bc-btn-default bc-btn-sm"
+                                        th:title="${u.status == 'ACTIVE'} ? 'Deactivate' : 'Activate'">
+                                        <i class="bi"
+                                            th:classappend="${u.status == 'ACTIVE'} ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/web/master/users/delete/{id}(id=${u.id})}" method="post"
+                                    style="display:inline;" th:attr="data-confirm=#{users.confirm.delete}">
+                                    <button class="bc-btn bc-btn-danger bc-btn-sm" th:title="#{common.delete}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${users.content.isEmpty()}">
+                        <td th:attr="colspan=${isSuperAdmin} ? 7 : 6">
+                            <div class="bc-empty">
+                                <i class="bi bi-people"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+</body>
+
+</html>

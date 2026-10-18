@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{nav.finance.gl}">General Ledger</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span th:text="#{common.print}">Print</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <a href="/web/finance/reports/trial-balance" class="bc-ribbon-btn">
+                <i class="bi bi-table"></i>
+                <span th:text="#{nav.finance.trial.balance}">Trial Balance</span>
+            </a>
+            <a href="/web/finance/reports/profit-loss" class="bc-ribbon-btn">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span th:text="#{nav.finance.profit.loss}">P&L</span>
+            </a>
+            <a href="/web/finance/reports/balance-sheet" class="bc-ribbon-btn">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span th:text="#{nav.finance.balance.sheet}">Balance Sheet</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap;">
+                <i class="bi bi-funnel"></i>
+
+                <select th:if="${isSuperAdmin}" name="storeId" class="bc-select">
+                    <option value="" th:text="#{common.all.branches}">All Branches</option>
+                    <option th:each="s : ${stores}" th:value="${s.id}" th:text="${s.code} + ' - ' + ${s.name}"
+                        th:selected="${selectedStoreId != null and selectedStoreId == s.id}"></option>
+                </select>
+
+                <select name="coaId" class="bc-select">
+                    <option value="" th:text="#{info.account}">All Accounts</option>
+                    <option th:each="a : ${accounts}" th:value="${a.id}"
+                        th:text="${a.accountCode} + ' - ' + ${a.accountName}"
+                        th:selected="${selectedCoaId != null and selectedCoaId == a.id}"></option>
+                </select>
+
+                <input type="date" name="from" th:value="${from}" class="bc-input" style="max-width:160px;">
+                <span style="color:var(--bc-text-muted);">→</span>
+                <input type="date" name="to" th:value="${to}" class="bc-input" style="max-width:160px;">
+
+                <button type="submit" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-search"></i> <span th:text="#{common.filter}">Filter</span>
+                </button>
+                <a href="/web/finance/general-ledger" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-x-circle"></i> <span th:text="#{common.reset}">Reset</span>
+                </a>
+            </form>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:120px;" th:text="#{common.date}">Date</th>
+                        <th style="width:130px;" th:text="#{common.status.detail}">Doc Type</th>
+                        <th style="width:150px;" th:text="#{pi.field.invoice.number}">Doc No</th>
+                        <th style="width:120px;" th:text="#{info.account}">Account</th>
+                        <th th:if="${isSuperAdmin}" style="width:140px;" th:text="#{common.store}">Store</th>
+                        <th>Description</th>
+                        <th style="width:140px;text-align:right;" th:text="#{common.total}">Debit</th>
+                        <th style="width:140px;text-align:right;" th:text="#{common.total}">Credit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="gl : ${ledgers.content}">
+                        <td th:text="${#temporals.format(gl.transactionDate, 'dd/MM/yyyy')}"></td>
+                        <td>
+                            <span class="bc-badge bc-badge-secondary" th:text="${gl.documentType}"></span>
+                        </td>
+                        <td><strong style="color:var(--bc-primary);" th:text="${gl.documentNo}"></strong></td>
+                        <td>
+                            <strong th:text="${gl.coa.accountCode}"></strong>
+                            <span style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="' - ' + ${gl.coa.accountName}"></span>
+                        </td>
+                        <td th:if="${isSuperAdmin}">
+                            <span class="bc-badge bc-badge-info" th:text="${gl.store.name}"></span>
+                        </td>
+                        <td style="font-size:12px;color:var(--bc-text-secondary);" th:text="${gl.description} ?: '-'">
+                        </td>
+                        <td style="text-align:right;"
+                            th:text="${gl.debit > 0} ? 'Rp ' + ${#numbers.formatDecimal(gl.debit, 0, 'COMMA', 2, 'POINT')} : '-'">
+                        </td>
+                        <td style="text-align:right;"
+                            th:text="${gl.credit > 0} ? 'Rp ' + ${#numbers.formatDecimal(gl.credit, 0, 'COMMA', 2, 'POINT')} : '-'">
+                        </td>
+                    </tr>
+                    <tr th:if="${ledgers.content.isEmpty()}">
+                        <td th:attr="colspan=${isSuperAdmin} ? 8 : 7">
+                            <div class="bc-empty">
+                                <i class="bi bi-book"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </th:block>
+</body>
+
+</html>

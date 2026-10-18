@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<body>
+
+    <nav th:fragment="sidebar">
+
+        <!-- ============================================================
+         BRAND
+         ============================================================ -->
+        <div class="bc-sidebar-brand">
+            <!-- Logo sidebar: gambar jika ada, fallback ke teks -->
+            <img th:if="${sidebarLogoPath != null and !sidebarLogoPath.isEmpty()}" th:src="${sidebarLogoPath}"
+                alt="Brand" style="width:28px;height:28px;object-fit:contain;
+                border-radius:4px;flex-shrink:0;">
+
+            <div th:if="${sidebarLogoPath == null or sidebarLogoPath.isEmpty()}" class="bc-sidebar-brand-icon"
+                th:text="${sidebarBrandText}">PG</div>
+
+            <span class="bc-sidebar-text" th:text="${sidebarBrandName}">Simply PoS</span>
+
+            <button type="button" class="bc-sidebar-close" id="sidebarClose" title="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- ============================================================
+         MAIN  (semua role)
+         ============================================================ -->
+        <div class="bc-sidebar-group">
+            <div class="bc-sidebar-group-title" th:text="#{nav.main}">Main</div>
+            <a th:href="@{/web/dashboard}" class="bc-sidebar-link">
+                <i class="bi bi-speedometer2"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.dashboard}">Dashboard</span>
+            </a>
+        </div>
+
+        <!-- ============================================================
+         MASTER DATA
+         Visible jika user punya minimal 1 akses di grup ini:
+         SUPER_ADMIN, ADMIN, CASHIER, STAFF
+         ============================================================ -->
+        <div class="bc-sidebar-group" sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','CASHIER','STAFF')">
+
+            <div class="bc-sidebar-group-title" th:text="#{nav.master.data}">Master Data</div>
+
+            <!-- COA: SUPER_ADMIN, ADMIN -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/master/coa}" class="bc-sidebar-link">
+                <i class="bi bi-diagram-3"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.coa}">Chart of Accounts</span>
+            </a>
+
+            <!-- Items: semua role -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','CASHIER','STAFF')" th:href="@{/web/master/items}"
+                class="bc-sidebar-link">
+                <i class="bi bi-box-seam"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.items}">Items</span>
+            </a>
+
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/master/units}" class="bc-sidebar-link">
+                <i class="bi bi-rulers"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.units}">Master Unit</span>
+            </a>
+
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/master/unit-conversions}"
+                class="bc-sidebar-link">
+                <i class="bi bi-arrow-left-right"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.unit.conversions}">Konversi Unit</span>
+            </a>
+
+            <!-- Store Prices: SUPER_ADMIN, ADMIN -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/master/store-prices}"
+                class="bc-sidebar-link">
+                <i class="bi bi-tags"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.store.prices}">Harga &amp; Stok</span>
+            </a>
+
+            <!-- Vendors: SUPER_ADMIN, ADMIN, STAFF -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','STAFF')" th:href="@{/web/master/vendors}"
+                class="bc-sidebar-link">
+                <i class="bi bi-truck"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.vendors}">Vendors</span>
+            </a>
+
+            <!-- Customers: semua role -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','CASHIER','STAFF')" th:href="@{/web/master/customers}"
+                class="bc-sidebar-link">
+                <i class="bi bi-people"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.customers}">Customers</span>
+            </a>
+        </div>
+
+        <!-- ============================================================
+         OPERASIONAL
+         ============================================================ -->
+        <div class="bc-sidebar-group" sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','CASHIER','STAFF')">
+
+            <div class="bc-sidebar-group-title" th:text="#{nav.operations}">Operasional</div>
+
+            <!-- Purchase Order: SUPER_ADMIN, ADMIN, STAFF -->
+            <!-- <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','STAFF')" th:href="@{/web/purchase/orders}"
+                class="bc-sidebar-link">
+                <i class="bi bi-cart"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.purchase.orders}">Purchase Order</span>
+            </a> -->
+
+            <!-- Purchase Invoice: SUPER_ADMIN, ADMIN, STAFF -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','STAFF')" th:href="@{/web/purchase/invoices}"
+                class="bc-sidebar-link">
+                <i class="bi bi-receipt"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.purchase.invoices}">Purchase Invoice</span>
+            </a>
+
+            <!-- Vendor Payment: SUPER_ADMIN, ADMIN -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/purchase/vendor-payments}"
+                class="bc-sidebar-link">
+                <i class="bi bi-cash-coin"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.purchase.vendor.payments}">Vendor Payment</span>
+            </a>
+
+            <!-- POS / Sales: SUPER_ADMIN, ADMIN, CASHIER -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','CASHIER')" th:href="@{/web/sales/pos}"
+                class="bc-sidebar-link">
+                <i class="bi bi-shop"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.sales.pos}">POS / Sales</span>
+            </a>
+
+            <!-- Sales Orders: SUPER_ADMIN, ADMIN, CASHIER -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN','CASHIER')" th:href="@{/web/sales/orders}"
+                class="bc-sidebar-link">
+                <i class="bi bi-receipt-cutoff"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.sales.orders}">Sales Orders</span>
+            </a>
+
+            <!-- Customer Payments: SUPER_ADMIN, ADMIN -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/sales/customer-payments}"
+                class="bc-sidebar-link">
+                <i class="bi bi-cash-stack"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.sales.customer.payments}">Customer Payments</span>
+            </a>
+
+            <!-- Customer Ledger: SUPER_ADMIN, ADMIN -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/sales/customer-ledgers}"
+                class="bc-sidebar-link">
+                <i class="bi bi-journal-bookmark"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.sales.customer.ledgers}">Customer Ledger</span>
+            </a>
+
+            <!-- Item Journal: SUPER_ADMIN, ADMIN -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/inventory/item-journals}"
+                class="bc-sidebar-link">
+                <i class="bi bi-sliders"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.inventory.item.journal}">Item Journal</span>
+            </a>
+
+            <!-- Item Ledger: SUPER_ADMIN, ADMIN -->
+            <a sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')" th:href="@{/web/inventory/item-ledgers}"
+                class="bc-sidebar-link">
+                <i class="bi bi-journal-text"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.inventory.item.ledger}">Item Ledger</span>
+            </a>
+        </div>
+
+        <!-- ============================================================
+         FINANCE  (SUPER_ADMIN, ADMIN only)
+         ============================================================ -->
+        <div class="bc-sidebar-group" sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')">
+            <div class="bc-sidebar-group-title" th:text="#{nav.finance}">Finance</div>
+
+            <a th:href="@{/web/finance/general-ledger}" class="bc-sidebar-link">
+                <i class="bi bi-book"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.finance.gl}">General Ledger</span>
+            </a>
+
+            <a th:href="@{/web/finance/reports/trial-balance}" class="bc-sidebar-link">
+                <i class="bi bi-table"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.finance.trial.balance}">Trial Balance</span>
+            </a>
+
+            <a th:href="@{/web/finance/reports/profit-loss}" class="bc-sidebar-link">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.finance.profit.loss}">Profit &amp; Loss</span>
+            </a>
+
+            <a th:href="@{/web/finance/reports/balance-sheet}" class="bc-sidebar-link">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.finance.balance.sheet}">Balance Sheet</span>
+            </a>
+        </div>
+
+        <!-- ============================================================
+         REPORTS  (SUPER_ADMIN, ADMIN only)
+         ============================================================ -->
+        <div class="bc-sidebar-group" sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')">
+            <div class="bc-sidebar-group-title" th:text="#{nav.reports}">Reports</div>
+
+            <a th:href="@{/web/reports/sales}" class="bc-sidebar-link">
+                <i class="bi bi-graph-up"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.reports.sales}">Sales Report</span>
+            </a>
+
+            <a th:href="@{/web/reports/purchase}" class="bc-sidebar-link">
+                <i class="bi bi-cart-check"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.reports.purchase}">Purchase Report</span>
+            </a>
+
+            <a th:href="@{/web/reports/inventory}" class="bc-sidebar-link">
+                <i class="bi bi-box-seam"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.reports.inventory}">Inventory Report</span>
+            </a>
+
+            <a th:href="@{/web/reports/aging-ar}" class="bc-sidebar-link">
+                <i class="bi bi-hourglass-split"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.reports.aging.ar}">AR Aging</span>
+            </a>
+
+            <a th:href="@{/web/reports/aging-ap}" class="bc-sidebar-link">
+                <i class="bi bi-hourglass"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.reports.aging.ap}">AP Aging</span>
+            </a>
+        </div>
+        <!-- ============================================================
+     ADMINISTRATION  (SUPER_ADMIN & ADMIN only)
+     ============================================================ -->
+        <div class="bc-sidebar-group" sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')">
+            <div class="bc-sidebar-group-title" th:text="#{nav.administration}">Administrasi</div>
+            <a th:href="@{/web/settings/edit}" class="bc-sidebar-link">
+                <i class="bi bi-gear"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.settings}">Pengaturan</span>
+            </a>
+
+            <!-- Manajemen User: SUPER_ADMIN & ADMIN -->
+            <a th:href="@{/web/master/users}" class="bc-sidebar-link">
+                <i class="bi bi-person-badge"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.users}">Manajemen User</span>
+            </a>
+
+            <!-- Manajemen Cabang: SUPER_ADMIN only -->
+            <a sec:authorize="hasRole('SUPER_ADMIN')" th:href="@{/web/master/stores}" class="bc-sidebar-link">
+                <i class="bi bi-shop"></i>
+                <span class="bc-sidebar-text" th:text="#{nav.master.stores}">Manajemen Cabang</span>
+            </a>
+        </div>
+
+        <div class="bc-sidebar-group">
+            <div class="bc-sidebar-group-title">
+                <hr>
+                <a class="bc-sidebar-link">
+                    <span class="bc-sidebar-text" th:text="${sidebarBrandName}">Simply PoS</span>
+                </a>
+                <hr>
+            </div>
+        </div>
+    </nav>
+</body>
+
+</html>

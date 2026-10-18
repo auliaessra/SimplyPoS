@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{items.title}">Items</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/master/items/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-plus-lg"></i> <span th:text="#{common.new}">New</span>
+            </a>
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i> <span th:text="#{common.print}">Print</span>
+            </button>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-filter-bar">
+            <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
+                <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
+                <input type="text" name="q" th:value="${q}" class="bc-input" th:placeholder="#{common.search} + '...'">
+                <button type="submit" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-search"></i> <span th:text="#{common.search}">Search</span>
+                </button>
+                <a href="/web/master/items" class="bc-btn bc-btn-default bc-btn-sm">
+                    <i class="bi bi-x-circle"></i> <span th:text="#{common.reset}">Reset</span>
+                </a>
+            </form>
+            <div style="font-size:12px;color:var(--bc-text-secondary);">
+                <span th:text="#{common.total}">Total</span>:
+                <strong th:text="${items.totalElements}">0</strong>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:140px;" th:text="#{items.field.code}">Code</th>
+                        <th th:text="#{items.field.name}">Name</th>
+                        <th style="width:80px;" th:text="#{items.field.unit}">Unit</th>
+                        <th style="width:100px;" th:text="#{items.field.status}">Status</th>
+                        <th style="width:120px;text-align:right;" th:text="#{common.actions}"
+                            sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="i : ${items.content}">
+                        <td><strong th:text="${i.code}"></strong></td>
+                        <td th:text="${i.name}"></td>
+                        <td>
+                            <span class="bc-badge bc-badge-info" th:text="${i.unitCode}">ML</span>
+                        </td>
+                        <td>
+                            <span th:if="${i.isActive}" class="bc-badge bc-badge-success"
+                                th:text="#{common.active}">Active</span>
+                            <span th:unless="${i.isActive}" class="bc-badge bc-badge-secondary"
+                                th:text="#{common.inactive}">Inactive</span>
+                        </td>
+                        <td style="text-align:right;" sec:authorize="hasAnyRole('SUPER_ADMIN','ADMIN')">
+                            <div class="bc-table-actions" style="justify-content:flex-end;">
+                                <a th:href="@{/web/master/items/edit/{id}(id=${i.id})}"
+                                    class="bc-btn bc-btn-default bc-btn-sm" th:title="#{common.edit}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:action="@{/web/master/items/delete/{id}(id=${i.id})}" method="post"
+                                    style="display:inline;" th:attr="data-confirm=#{common.confirm.delete}">
+                                    <button class="bc-btn bc-btn-danger bc-btn-sm" th:title="#{common.delete}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${items.content.isEmpty()}">
+                        <td colspan="5">
+                            <div class="bc-empty">
+                                <i class="bi bi-inbox"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+</body>
+
+</html>

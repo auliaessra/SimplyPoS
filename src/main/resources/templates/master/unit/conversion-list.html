@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{units.conversion.title}">Unit Conversions</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <a href="/web/master/unit-conversions/create" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-plus-lg"></i>
+                <span th:text="#{common.new}">New</span>
+            </a>
+            <a href="/web/master/units" class="bc-ribbon-btn">
+                <i class="bi bi-rulers"></i>
+                <span th:text="#{units.title}">Master Unit</span>
+            </a>
+            <div class="bc-ribbon-divider"></div>
+            <button type="button" class="bc-ribbon-btn" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span th:text="#{common.refresh}">Refresh</span>
+            </button>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-alert bc-alert-info" style="margin:16px 24px 0;">
+            <i class="bi bi-info-circle-fill"></i>
+            <span th:text="#{units.conversion.info}">
+                Konversi menentukan hubungan antar unit. Contoh: 1 Liter = 1000 ML.
+            </span>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;text-align:center;">#</th>
+                        <th style="width:120px;" th:text="#{units.field.from}">Dari</th>
+                        <th style="width:60px;text-align:center;">=</th>
+                        <th style="width:160px;text-align:right;" th:text="#{units.field.factor}">Faktor</th>
+                        <th style="width:120px;" th:text="#{units.field.to}">Ke</th>
+                        <th>Keterangan</th>
+                        <th style="width:100px;" th:text="#{common.status}">Status</th>
+                        <th style="width:150px;text-align:right;" th:text="#{common.actions}">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="c, stat : ${conversions}">
+                        <td style="text-align:center;color:var(--bc-text-muted);" th:text="${stat.count}">1</td>
+                        <td>
+                            <strong style="color:var(--bc-primary);font-family:monospace;"
+                                th:text="${c.fromUnitCode}">LTR</strong>
+                        </td>
+                        <td style="text-align:center;color:var(--bc-text-muted);font-weight:700;">=</td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="${#numbers.formatDecimal(c.factor, 0, 'COMMA', 4, 'POINT')}">
+                            1000
+                        </td>
+                        <td>
+                            <strong style="color:var(--bc-primary);font-family:monospace;"
+                                th:text="${c.toUnitCode}">ML</strong>
+                        </td>
+                        <td style="font-size:12px;color:var(--bc-text-secondary);">
+                            <div th:text="${c.notes} ?: '-'">1 Liter = 1000 ML</div>
+                        </td>
+                        <td>
+                            <span th:if="${c.isActive}" class="bc-badge bc-badge-success"
+                                th:text="#{common.active}">Active</span>
+                            <span th:unless="${c.isActive}" class="bc-badge bc-badge-secondary"
+                                th:text="#{common.inactive}">Inactive</span>
+                        </td>
+                        <td style="text-align:right;">
+                            <div class="bc-table-actions" style="justify-content:flex-end;">
+                                <a th:href="@{/web/master/unit-conversions/edit/{id}(id=${c.id})}"
+                                    class="bc-btn bc-btn-default bc-btn-sm" th:title="#{common.edit}">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form th:action="@{/web/master/unit-conversions/toggle/{id}(id=${c.id})}" method="post"
+                                    style="display:inline;">
+                                    <button class="bc-btn bc-btn-default bc-btn-sm">
+                                        <i class="bi"
+                                            th:classappend="${c.isActive} ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+                                    </button>
+                                </form>
+                                <form th:action="@{/web/master/unit-conversions/delete/{id}(id=${c.id})}" method="post"
+                                    style="display:inline;" th:attr="data-confirm=#{common.confirm.delete}">
+                                    <button class="bc-btn bc-btn-danger bc-btn-sm" th:title="#{common.delete}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${conversions.isEmpty()}">
+                        <td colspan="8">
+                            <div class="bc-empty">
+                                <i class="bi bi-arrow-left-right"></i>
+                                <div th:text="#{common.no.data}">No data</div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </th:block>
+</body>
+
+</html>

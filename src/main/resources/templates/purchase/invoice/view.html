@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.w3.org/1999/xhtml" layout:decorate="~{layouts/base}"
+    th:lang="${#locale.language}" lang="en">
+
+<head>
+    <title th:text="#{pi.title}">PI Detail</title>
+</head>
+
+<body>
+
+    <th:block layout:fragment="ribbon">
+        <div class="bc-ribbon">
+            <form th:if="${invoice.status == 'DRAFT'}" th:action="@{/web/purchase/invoices/post/{id}(id=${invoice.id})}"
+                method="post" style="display:inline;" th:attr="data-confirm=#{pi.post.msg}">
+                <button type="submit" class="bc-ribbon-btn bc-primary">
+                    <i class="bi bi-check-circle"></i>
+                    <span th:text="#{pi.action.post}">Post Invoice</span>
+                </button>
+            </form>
+
+            <a th:if="${invoice.status == 'POSTED' or invoice.status == 'PARTIAL_PAID'}"
+                th:href="@{/web/purchase/vendor-payments/create(piId=${invoice.id})}" class="bc-ribbon-btn bc-primary">
+                <i class="bi bi-cash-coin"></i>
+                <span th:text="#{pi.action.create.payment}">Create Payment</span>
+            </a>
+
+            <div class="bc-ribbon-divider"></div>
+
+            <button type="button" class="bc-ribbon-btn" onclick="window.print()">
+                <i class="bi bi-printer"></i>
+                <span th:text="#{common.print}">Print</span>
+            </button>
+
+            <div class="bc-ribbon-divider"></div>
+
+            <a href="/web/purchase/invoices" class="bc-ribbon-btn">
+                <i class="bi bi-arrow-left"></i>
+                <span th:text="#{common.back.list}">Back</span>
+            </a>
+        </div>
+    </th:block>
+
+    <th:block layout:fragment="content">
+
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header" style="padding:20px 24px;">
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <div style="width:48px;height:48px;border-radius:8px;
+                            background:linear-gradient(135deg,#0078D4,#50E6FF);
+                            display:flex;align-items:center;justify-content:center;
+                            color:#fff;font-size:22px;">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:12px;color:var(--bc-text-secondary);
+                                text-transform:uppercase;letter-spacing:.5px;" th:text="#{pi.title}">Purchase Invoice
+                        </div>
+                        <h1 style="margin:2px 0 0;font-size:22px;font-weight:600;" th:text="${invoice.invoiceNo}">PI0001
+                        </h1>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <span th:if="${invoice.status == 'DRAFT'}" class="bc-badge bc-badge-secondary"
+                        style="padding:6px 12px;" th:text="#{status.draft}">DRAFT</span>
+                    <span th:if="${invoice.status == 'POSTED'}" class="bc-badge bc-badge-info" style="padding:6px 12px;"
+                        th:text="#{status.posted}">POSTED</span>
+                    <span th:if="${invoice.status == 'PARTIAL_PAID'}" class="bc-badge bc-badge-warning"
+                        style="padding:6px 12px;" th:text="#{status.partial.paid}">PARTIAL PAID</span>
+                    <span th:if="${invoice.status == 'PAID'}" class="bc-badge bc-badge-success"
+                        style="padding:6px 12px;" th:text="#{status.paid}">PAID</span>
+                    <span class="bc-badge bc-badge-info" style="padding:6px 12px;"
+                        th:text="${invoice.storeName}">Pusat</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;
+                padding:0 24px;margin-top:16px;">
+
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span><i class="bi bi-truck" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{info.vendor}">Vendor</span></span>
+                </div>
+                <div class="bc-card-body">
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{po.field.vendor}">Vendor</div>
+                        <div class="bc-info-value" th:text="${invoice.vendorName}"></div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{pi.field.vendor.invoice.no}">Vendor Invoice No</div>
+                        <div class="bc-info-value" th:text="${invoice.vendorInvoiceNo} ?: '-'"></div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.store}">Store</div>
+                        <div class="bc-info-value" th:text="${invoice.storeName}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span><i class="bi bi-calendar-event" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{pi.title}">Invoice Info</span></span>
+                </div>
+                <div class="bc-card-body">
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{pi.field.invoice.number}">Invoice No</div>
+                        <div class="bc-info-value" style="font-weight:600;color:var(--bc-primary);"
+                            th:text="${invoice.invoiceNo}"></div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{pi.field.invoice.date}">Invoice Date</div>
+                        <div class="bc-info-value" th:text="${#temporals.format(invoice.invoiceDate, 'dd MMMM yyyy')}">
+                        </div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{pi.field.due.date}">Due Date</div>
+                        <div class="bc-info-value" th:text="${invoice.dueDate != null} ?
+                                  ${#temporals.format(invoice.dueDate, 'dd MMMM yyyy')} : '-'"></div>
+                    </div>
+                    <div class="bc-info-row" th:if="${invoice.postedAt != null}">
+                        <div class="bc-info-label" th:text="#{status.posted}">Posted At</div>
+                        <div class="bc-info-value"
+                            th:text="${#temporals.format(invoice.postedAt, 'dd MMM yyyy HH:mm')}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;">
+            <div class="bc-card-header">
+                <span><i class="bi bi-list-ul" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{common.item.lines}">Item Lines</span></span>
+                <span class="bc-badge bc-badge-info" th:text="${invoice.items.size()} + ' item'"></span>
+            </div>
+            <table class="bc-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;text-align:center;">#</th>
+                        <th style="width:140px;" th:text="#{items.field.code}">Code</th>
+                        <th th:text="#{items.field.name}">Name</th>
+                        <th style="width:140px;text-align:right;" th:text="#{common.qty}">Qty (ML)</th>
+                        <th style="width:180px;text-align:right;" th:text="#{common.unit.cost}">Unit Cost</th>
+                        <th style="width:180px;text-align:right;" th:text="#{common.subtotal.per.line}">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="it, stat : ${invoice.items}">
+                        <td style="text-align:center;color:var(--bc-text-muted);font-size:12px;"
+                            th:text="${stat.count}"></td>
+                        <td><strong style="color:var(--bc-primary);" th:text="${it.itemCode}"></strong></td>
+                        <td th:text="${it.itemName}"></td>
+                        <td style="text-align:right;"
+                            th:text="${#numbers.formatDecimal(it.qtyMl, 0, 'COMMA', 3, 'POINT')}"></td>
+                        <td style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(it.unitCost, 0, 'COMMA', 2, 'POINT')}"></td>
+                        <td style="text-align:right;font-weight:600;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(it.totalCost, 0, 'COMMA', 2, 'POINT')}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px;">
+            <div class="bc-card" style="margin:0;" th:if="${invoice.notes != null and !invoice.notes.isEmpty()}">
+                <div class="bc-card-header">
+                    <span><i class="bi bi-chat-left-text" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{common.notes}">Notes</span></span>
+                </div>
+                <div class="bc-card-body">
+                    <div style="white-space:pre-wrap;font-size:13px;" th:text="${invoice.notes}"></div>
+                </div>
+            </div>
+            <div th:if="${invoice.notes == null or invoice.notes.isEmpty()}"></div>
+
+            <div class="bc-card" style="margin:0;">
+                <div class="bc-card-header">
+                    <span><i class="bi bi-calculator" style="color:var(--bc-primary);"></i>
+                        <span th:text="#{common.total}">Summary</span></span>
+                </div>
+                <div class="bc-card-body">
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{common.subtotal}">Subtotal</div>
+                        <div class="bc-info-value" style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(invoice.subtotal, 0, 'COMMA', 2, 'POINT')}"></div>
+                    </div>
+                    <div class="bc-info-row" th:if="${invoice.taxAmount != null and invoice.taxAmount > 0}">
+                        <div class="bc-info-label" th:text="#{common.tax}">Tax</div>
+                        <div class="bc-info-value" style="text-align:right;"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(invoice.taxAmount, 0, 'COMMA', 2, 'POINT')}">
+                        </div>
+                    </div>
+                    <div class="bc-info-row" style="border-top:2px solid var(--bc-border);border-bottom:1px solid var(--bc-border);
+                            padding:12px 0;margin-top:4px;">
+                        <div class="bc-info-label" style="font-weight:600;font-size:13px;"
+                            th:text="#{common.grand.total}">TOTAL</div>
+                        <div class="bc-info-value" style="text-align:right;font-weight:700;font-size:16px;
+                                color:var(--bc-primary);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(invoice.totalAmount, 0, 'COMMA', 2, 'POINT')}">
+                        </div>
+                    </div>
+                    <div class="bc-info-row">
+                        <div class="bc-info-label" th:text="#{pi.field.paid}">Paid</div>
+                        <div class="bc-info-value" style="text-align:right;color:var(--bc-success);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(invoice.paidAmount, 0, 'COMMA', 2, 'POINT')}">
+                        </div>
+                    </div>
+                    <div class="bc-info-row" th:with="outstanding=${invoice.totalAmount - invoice.paidAmount}">
+                        <div class="bc-info-label" style="font-weight:600;color:var(--bc-danger);"
+                            th:text="#{pi.field.outstanding}">Outstanding</div>
+                        <div class="bc-info-value" style="text-align:right;font-weight:700;color:var(--bc-danger);"
+                            th:text="'Rp ' + ${#numbers.formatDecimal(outstanding, 0, 'COMMA', 2, 'POINT')}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bc-card" style="margin-top:16px;margin-bottom:24px;" th:if="${invoice.status != 'DRAFT'}">
+            <div class="bc-card-header">
+                <span><i class="bi bi-book" style="color:var(--bc-primary);"></i>
+                    <span th:text="#{info.posting}">Accounting Posting</span></span>
+                <span class="bc-badge bc-badge-success" th:text="#{status.posted}">POSTED</span>
+            </div>
+            <div class="bc-card-body" style="padding:0;">
+                <table class="bc-table">
+                    <thead>
+                        <tr>
+                            <th th:text="#{info.account}">Account</th>
+                            <th style="width:100px;" th:text="#{common.status.detail}">Type</th>
+                            <th style="width:180px;text-align:right;" th:text="#{common.total}">Debit</th>
+                            <th style="width:180px;text-align:right;" th:text="#{common.total}">Credit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>1301</strong> – Persediaan / Inventory</td>
+                            <td><span class="bc-badge bc-badge-info">ASSET</span></td>
+                            <td style="text-align:right;font-weight:600;color:var(--bc-primary);"
+                                th:text="'Rp ' + ${#numbers.formatDecimal(invoice.subtotal, 0, 'COMMA', 2, 'POINT')}">
+                            </td>
+                            <td style="text-align:right;color:var(--bc-text-muted);">-</td>
+                        </tr>
+                        <tr th:if="${invoice.taxAmount != null and invoice.taxAmount > 0}">
+                            <td><strong>1302</strong> – PPN Masukan / Input VAT</td>
+                            <td><span class="bc-badge bc-badge-info">ASSET</span></td>
+                            <td style="text-align:right;font-weight:600;color:var(--bc-primary);"
+                                th:text="'Rp ' + ${#numbers.formatDecimal(invoice.taxAmount, 0, 'COMMA', 2, 'POINT')}">
+                            </td>
+                            <td style="text-align:right;color:var(--bc-text-muted);">-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>2101</strong> – Hutang Usaha / AP</td>
+                            <td><span class="bc-badge bc-badge-danger">LIABILITY</span></td>
+                            <td style="text-align:right;color:var(--bc-text-muted);">-</td>
+                            <td style="text-align:right;font-weight:600;color:var(--bc-danger);"
+                                th:text="'Rp ' + ${#numbers.formatDecimal(invoice.totalAmount, 0, 'COMMA', 2, 'POINT')}">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </th:block>
+
+</body>
+
+</html>
