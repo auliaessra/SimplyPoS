@@ -112,6 +112,7 @@
                 const btn = document.getElementById('btnScanSearch');
                 if (btn) {
                     btn.addEventListener('click', function () {
+                        console.log(window.BarcodeScanner)
                         if (!window.BarcodeScanner) {
                             alert('Scanner belum siap, silakan refresh halaman');
                             return;

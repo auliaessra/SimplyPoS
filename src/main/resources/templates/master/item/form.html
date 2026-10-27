@@ -104,45 +104,26 @@
         </div>
     </th:block>
     <th:block layout:fragment="scripts">
-        <!-- ============================================================
-            1. SCANNER MODAL (HARUS PERTAMA)
-            ============================================================ -->
+        <!-- WAJIB: Modal dulu -->
         <div th:replace="~{components/scanner-modal :: modal}"></div>
 
-        <!-- ============================================================
-            2. SCRIPT YANG PAKAI SCANNER (SETELAH MODAL)
-            ============================================================ -->
+        <!-- Baru script -->
         <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const btnScan = document.getElementById('btnScanBarcode');
-            const barcodeInput = document.getElementById('barcodeInput');
-
-            if (!btnScan) return;
-
-            btnScan.addEventListener('click', function () {
-                // ===== Defensive check =====
+            document.getElementById('btnScanBarcode')?.addEventListener('click', function () {
                 if (!window.BarcodeScanner) {
-                    console.error('[scan] BarcodeScanner not loaded');
-                    alert('Scanner tidak tersedia. Silakan refresh halaman (Ctrl+F5)');
+                    alert('Scanner tidak siap. Refresh halaman.');
                     return;
                 }
-
                 window.BarcodeScanner.open({
                     title: 'Scan Barcode Item',
                     onDetected: function (barcode) {
-                        if (barcodeInput) {
-                            barcodeInput.value = barcode;
-                            barcodeInput.focus();
-                        }
+                        document.getElementById('barcodeInput').value = barcode;
                     }
                 });
             });
-
-            console.log('[scan] Button bound:', !!btnScan,
-                        'Scanner ready:', !!window.BarcodeScanner);
         });
         </script>
-
     </th:block>
 </body>
 

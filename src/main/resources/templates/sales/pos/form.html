@@ -640,32 +640,29 @@
             ============================================================ -->
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                const btnScan = document.getElementById('btnScanPOS');
-
-                if (!btnScan) {
-                    console.warn('[POS] Scan button not found');
-                    return;
-                }
-
-                btnScan.addEventListener('click', function () {
+                // Tombol scan
+                document.getElementById('btnScanPOS')?.addEventListener('click', function () {
                     if (!window.BarcodeScanner) {
-                        alert('Scanner tidak tersedia. Refresh halaman.');
+                        alert('Scanner tidak siap. Refresh halaman.');
                         return;
                     }
-
                     window.BarcodeScanner.open({
                         title: 'Scan barcode produk',
                         onDetected: function (barcode) {
-                            if (typeof window.handleScannedBarcode === 'function') {
+                            if (window.handleScannedBarcode) {
                                 window.handleScannedBarcode(barcode);
-                            } else {
-                                console.warn('[POS] handleScannedBarcode not defined');
                             }
                         }
                     });
                 });
 
-                console.log('[POS] Scan button ready. Scanner:', !!window.BarcodeScanner);
+                // Listen USB/Bluetooth scanner (wedge)
+                document.addEventListener('barcode:scanned', function (e) {
+                    console.log('Wedge scan:', e.detail.barcode);
+                    if (window.handleScannedBarcode) {
+                        window.handleScannedBarcode(e.detail.barcode);
+                    }
+                });
             });
         </script>
     </th:block>
