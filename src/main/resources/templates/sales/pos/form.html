@@ -239,7 +239,8 @@
                 const filtered = productsData.filter(p =>
                     !q ||
                     (p.itemCode && p.itemCode.toLowerCase().includes(q)) ||
-                    (p.itemName && p.itemName.toLowerCase().includes(q))
+                    (p.itemName && p.itemName.toLowerCase().includes(q)) ||
+                    (p.barcode && p.barcode.toLowerCase().includes(q))
                 );
 
                 if (filtered.length === 0) {
