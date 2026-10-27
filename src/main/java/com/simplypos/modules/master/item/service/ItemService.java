@@ -60,6 +60,7 @@ public class ItemService {
                 .unit(unit)
                 .description(request.getDescription())
                 .isActive(request.getIsActive() == null ? true : request.getIsActive())
+                .barcode(request.getBarcode())
                 .build();
 
         return toResponse(repo.save(entity));
@@ -84,6 +85,7 @@ public class ItemService {
             });
         }
 
+        entity.setBarcode(request.getBarcode());
         entity.setCode(request.getCode());
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());

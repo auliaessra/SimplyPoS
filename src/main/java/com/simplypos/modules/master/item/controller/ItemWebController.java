@@ -71,6 +71,7 @@ public class ItemWebController {
         request.setUnitId(item.getUnitId()); // ← tambah
         request.setDescription(item.getDescription());
         request.setIsActive(item.getIsActive());
+        request.setBarcode(item.getBarcode());
         model.addAttribute("item", request);
         model.addAttribute("id", id);
         model.addAttribute("units", unitService.findActive()); // ← tambah
