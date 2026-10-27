@@ -23,4 +23,7 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
     Page<Item> search(@Param("keyword") String keyword, Pageable pageable);
 
     Page<Item> findByIsActiveTrue(Pageable pageable);
+
+    Optional<Item> findByBarcode(String barcode);    // ← BARU
+    boolean existsByBarcode(String barcode);         // ← BARU
 }

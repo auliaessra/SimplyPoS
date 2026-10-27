@@ -153,6 +153,7 @@ public class StorePriceService {
                 stockQty,
                 minStock,
                 unitCode,
-                unitName);
+                unitName,
+                e.getItem().getBarcode());
     }
 }

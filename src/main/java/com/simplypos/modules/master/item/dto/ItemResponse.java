@@ -16,4 +16,6 @@ public class ItemResponse {
     private String unitName;
     private String description;
     private Boolean isActive;
+
+    private String barcode;
 }

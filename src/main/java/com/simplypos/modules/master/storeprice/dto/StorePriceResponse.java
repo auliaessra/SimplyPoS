@@ -26,6 +26,7 @@ public class StorePriceResponse {
     private BigDecimal minStockMl;
     private String unitCode;
     private String unitName;
+    private String barcode;
 
     public StorePriceResponse() {
     }
@@ -34,7 +35,7 @@ public class StorePriceResponse {
             Long storeId, String storeName,
             BigDecimal buyPrice, BigDecimal sellPrice,
             BigDecimal stockQtyMl, BigDecimal minStockMl,
-            String unitCode, String unitName) {
+            String unitCode, String unitName, String barcode) {
         this.id = id;
         this.itemId = itemId;
         this.itemCode = itemCode;
@@ -47,6 +48,7 @@ public class StorePriceResponse {
         this.minStockMl = minStockMl;
         this.unitCode = unitCode;
         this.unitName = unitName;
+        this.barcode = barcode;
     }
 
     // ==================== SAFE GETTERS ====================

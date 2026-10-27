@@ -47,8 +47,18 @@
                         <i class="bi bi-box-seam" style="color:var(--bc-primary);"></i>
                         <span th:text="#{pos.catalog}">Product Catalog</span>
                     </span>
-                    <input type="text" id="searchProduct" class="bc-input" th:placeholder="#{pos.search}"
-                        style="max-width:280px;height:30px;">
+                    <div style="display:flex;gap:6px;align-items:center;flex:1;max-width:400px;">
+                        <input type="text" id="searchProduct" class="bc-input bc-pos-search"
+                            th:placeholder="#{pos.search}" style="flex:1;">
+
+                        <!-- ✅ SCAN BUTTON -->
+                        <button type="button" id="btnScanPOS"
+                                class="bc-btn bc-btn-primary bc-btn-sm"
+                                style="flex-shrink:0;"
+                                th:title="#{scanner.scan}">
+                            <i class="bi bi-upc-scan" style="font-size:16px;"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="bc-card-body pos-product-grid" id="productGrid" style="display:grid;
                     grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
@@ -166,6 +176,15 @@
      SCRIPTS
      ========================================================= -->
     <th:block layout:fragment="scripts">
+        <!-- ============================================================
+            1. SCANNER MODAL (HARUS PALING ATAS)
+            ============================================================ -->
+        <div th:replace="~{components/scanner-modal :: modal}"></div>
+
+        <!-- ============================================================
+            2. SCRIPT UTAMA POS (setelah modal)
+            ============================================================ -->
+            
         <script th:inline="javascript">
             // ============================================================
             // i18n Messages
@@ -614,6 +633,40 @@
             window.addToCart = addToCart;
             window.removeFromCart = removeFromCart;
             window.updateQty = updateQty;
+        </script>
+
+        <!-- ============================================================
+            3. SCANNER BINDING (paling bawah)
+            ============================================================ -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const btnScan = document.getElementById('btnScanPOS');
+
+                if (!btnScan) {
+                    console.warn('[POS] Scan button not found');
+                    return;
+                }
+
+                btnScan.addEventListener('click', function () {
+                    if (!window.BarcodeScanner) {
+                        alert('Scanner tidak tersedia. Refresh halaman.');
+                        return;
+                    }
+
+                    window.BarcodeScanner.open({
+                        title: 'Scan barcode produk',
+                        onDetected: function (barcode) {
+                            if (typeof window.handleScannedBarcode === 'function') {
+                                window.handleScannedBarcode(barcode);
+                            } else {
+                                console.warn('[POS] handleScannedBarcode not defined');
+                            }
+                        }
+                    });
+                });
+
+                console.log('[POS] Scan button ready. Scanner:', !!window.BarcodeScanner);
+            });
         </script>
     </th:block>
 </body>

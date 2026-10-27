@@ -65,6 +65,9 @@ public class Item {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(length = 100)
+    private String barcode;
+
     // ==================== HELPER ====================
 
     /**

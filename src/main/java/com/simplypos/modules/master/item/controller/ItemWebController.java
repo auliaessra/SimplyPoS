@@ -1,7 +1,10 @@
 package com.simplypos.modules.master.item.controller;
 
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.simplypos.modules.master.item.dto.ItemRequest;
@@ -94,5 +98,17 @@ public class ItemWebController {
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/web/master/items";
+    }
+
+    @GetMapping("/by-barcode")
+    @ResponseBody
+    public ResponseEntity<?> findByBarcode(@RequestParam String barcode) {
+        try {
+            var item = service.findByBarcode(barcode);
+            return ResponseEntity.ok(item);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }

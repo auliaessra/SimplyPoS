@@ -40,13 +40,13 @@ INSERT INTO stores (code, name, address, phone)
 VALUES ('SP001', 'Simply PoS Pusat', 'Jl. Simply PoS No. 1, Jakarta', '08123456789')
 ON CONFLICT (code) DO NOTHING;
 
--- Insert User Super Admin (password: admin123, di-hash dengan BCrypt)
--- Hash untuk 'admin123' dengan BCrypt strength 10
+-- Insert User Super Admin (password: $PoS12345, di-hash dengan BCrypt)
+-- Hash untuk '$PoS12345' dengan BCrypt strength 10
 INSERT INTO users (store_id, username, password, full_name, role, status)
 VALUES (
     NULL, -- Super Admin tidak terikat store
     'superadmin',
-    '$2a$10$Jt0Yx5PFcHP6h3TbS8KqUuS2VW5xL7yR1kA2bC3dE4fG5hI6jK7lM', -- admin123
+    '$2a$12$bRROK0/rnTWSh6as52Gb8uzJLwp4MBLE6lTCXo.k8/l20uxHgfPJW', -- $PoS12345
     'Super Administrator',
     'SUPER_ADMIN',
     'ACTIVE'
@@ -57,7 +57,7 @@ INSERT INTO users (store_id, username, password, full_name, role, status)
 VALUES (
     (SELECT id FROM stores WHERE code = 'PG001'),
     'admin',
-    '$2a$10$Jt0Yx5PFcHP6h3TbS8KqUuS2VW5xL7yR1kA2bC3dE4fG5hI6jK7lM', -- admin123
+    '$2a$12$bRROK0/rnTWSh6as52Gb8uzJLwp4MBLE6lTCXo.k8/l20uxHgfPJW', -- $PoS12345
     'Store Administrator',
     'ADMIN',
     'ACTIVE'
@@ -68,8 +68,19 @@ INSERT INTO users (store_id, username, password, full_name, role, status)
 VALUES (
     (SELECT id FROM stores WHERE code = 'PG001'),
     'cashier',
-    '$2a$10$Jt0Yx5PFcHP6h3TbS8KqUuS2VW5xL7yR1kA2bC3dE4fG5hI6jK7lM', -- admin123
+    '$2a$12$bRROK0/rnTWSh6as52Gb8uzJLwp4MBLE6lTCXo.k8/l20uxHgfPJW', -- $PoS12345
     'Kasir Toko',
     'CASHIER',
+    'ACTIVE'
+) ON CONFLICT (username) DO NOTHING;
+
+-- Insert User Cashier
+INSERT INTO users (store_id, username, password, full_name, role, status)
+VALUES (
+    (SELECT id FROM stores WHERE code = 'PG001'),
+    'staff',
+    '$2a$12$bRROK0/rnTWSh6as52Gb8uzJLwp4MBLE6lTCXo.k8/l20uxHgfPJW', -- $PoS12345
+    'Staff Toko',
+    'STAFF',
     'ACTIVE'
 ) ON CONFLICT (username) DO NOTHING;

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ============================================================
+     SCANNER MODAL (Reusable, Robust)
+     Penggunaan:
+     <div th:replace="~{components/scanner-modal :: modal}"></div>
+     Lalu panggil: window.BarcodeScanner.open({ onDetected: fn })
+     ============================================================ -->
+<div th:fragment="modal" id="scannerModal"
+     style="display:none;position:fixed;inset:0;z-index:9999;
+            background:rgba(0,0,0,.85);backdrop-filter:blur(4px);">
+
+    <div style="position:absolute;top:0;left:0;right:0;bottom:0;
+                display:flex;flex-direction:column;align-items:center;
+                justify-content:center;padding:16px;">
+
+        <!-- HEADER -->
+        <div style="display:flex;justify-content:space-between;
+                    align-items:center;width:100%;max-width:500px;
+                    color:#fff;margin-bottom:16px;">
+            <div>
+                <div style="font-size:11px;opacity:.8;text-transform:uppercase;
+                            letter-spacing:.5px;">
+                    <i class="bi bi-upc-scan"></i>
+                    <span th:text="#{scanner.title}">Scan Barcode / QR Code</span>
+                </div>
+                <div id="scannerSubtitle"
+                     style="font-size:13px;opacity:.7;margin-top:2px;">
+                    <span th:text="#{scanner.hint}">Arahkan kamera ke barcode</span>
+                </div>
+            </div>
+            <button type="button" id="scannerCloseBtn"
+                    style="background:rgba(255,255,255,.15);border:none;
+                           width:40px;height:40px;border-radius:50%;
+                           color:#fff;cursor:pointer;font-size:18px;
+                           display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- SCANNER BOX -->
+        <div style="position:relative;width:100%;max-width:500px;
+                    aspect-ratio:1;background:#000;border-radius:12px;
+                    overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+
+            <div id="scannerReader" style="width:100%;height:100%;"></div>
+
+            <!-- Frame overlay -->
+            <div id="scannerOverlay"
+                 style="position:absolute;inset:0;pointer-events:none;
+                        display:flex;align-items:center;justify-content:center;">
+                <div style="position:relative;width:70%;aspect-ratio:1;
+                            border-radius:12px;overflow:hidden;">
+                    <div class="scan-corner scan-tl"></div>
+                    <div class="scan-corner scan-tr"></div>
+                    <div class="scan-corner scan-bl"></div>
+                    <div class="scan-corner scan-br"></div>
+                    <div class="scan-line"></div>
+                </div>
+            </div>
+
+            <!-- Status overlay -->
+            <div id="scannerStatus"
+                 style="position:absolute;bottom:16px;left:50%;
+                        transform:translateX(-50%);
+                        background:rgba(0,0,0,.75);color:#fff;
+                        padding:8px 16px;border-radius:20px;
+                        font-size:12px;display:none;z-index:2;
+                        white-space:nowrap;max-width:90%;">
+                <i class="bi bi-check-circle-fill"
+                   style="color:#4ADE80;"></i>
+                <span id="scannerStatusText">Scan berhasil</span>
+            </div>
+        </div>
+
+        <!-- LOADING INDICATOR -->
+        <div id="scannerLoading"
+             style="display:none;color:#fff;margin-top:16px;font-size:13px;">
+            <i class="bi bi-arrow-clockwise" style="animation:spin 1s linear infinite;"></i>
+            <span th:text="#{scanner.loading}">Memuat kamera...</span>
+        </div>
+
+        <!-- MANUAL INPUT -->
+        <div style="width:100%;max-width:500px;margin-top:16px;">
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="scannerManualInput"
+                       class="bc-input"
+                       th:placeholder="#{scanner.manual.input}"
+                       style="flex:1;height:44px;font-size:14px;
+                              background:rgba(255,255,255,.1);
+                              border:1px solid rgba(255,255,255,.2);
+                              color:#fff;">
+                <button type="button" id="scannerManualBtn"
+                        style="background:var(--bc-primary);color:#fff;
+                               border:none;padding:0 20px;border-radius:4px;
+                               cursor:pointer;font-size:14px;font-weight:600;
+                               height:44px;">
+                    <i class="bi bi-arrow-return-left"></i>
+                    <span th:text="#{scanner.submit}">Kirim</span>
+                </button>
+            </div>
+            <div style="text-align:center;margin-top:12px;">
+                <small style="color:rgba(255,255,255,.5);font-size:11px;">
+                    <i class="bi bi-info-circle"></i>
+                    <span th:text="#{scanner.manual.hint}">
+                        Atau ketik manual barcode jika kamera tidak tersedia
+                    </span>
+                </small>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- SCANNER STYLES -->
+<style>
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.scan-corner {
+    position: absolute; width: 40px; height: 40px;
+    border-color: #4CC2FF; border-style: solid; border-width: 0;
+}
+.scan-tl { top: 0; left: 0; border-top-width: 4px; border-left-width: 4px; border-top-left-radius: 12px; }
+.scan-tr { top: 0; right: 0; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 12px; }
+.scan-bl { bottom: 0; left: 0; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 12px; }
+.scan-br { bottom: 0; right: 0; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 12px; }
+.scan-line {
+    position: absolute; left: 10%; right: 10%; height: 2px;
+    background: linear-gradient(90deg, transparent, #4CC2FF, transparent);
+    box-shadow: 0 0 8px #4CC2FF; top: 0;
+    animation: scanline 2s ease-in-out infinite;
+}
+@keyframes scanline {
+    0%, 100% { top: 10%; opacity: 0; }
+    50% { top: 90%; opacity: 1; }
+}
+#scannerReader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+#scannerReader canvas, #scannerReader img { display: none !important; }
+</style>
+
+<!-- ============================================================
+     BARCODE SCANNER — Defensive Initialization
+     ============================================================ -->
+<script>
+(function() {
+    'use strict';
+
+    // ============ Guard: cegah double-init ============
+    if (window.BarcodeScanner && window.BarcodeScanner.__initialized) {
+        console.log('[BarcodeScanner] Already initialized, skip.');
+        return;
+    }
+
+    // ============ Internal state ============
+    let scanner = null;
+    let callback = null;
+    let modalEl = null;
+    let isProcessing = false;
+    let libraryReady = false;
+    let libraryPromise = null;
+    let currentCloseHandler = null;
+
+    // ============ Load html5-qrcode library dynamically ============
+    function loadLibrary() {
+        if (libraryPromise) return libraryPromise;
+
+        libraryPromise = new Promise((resolve, reject) => {
+            // Cek jika sudah ready
+            if (typeof window.Html5Qrcode !== 'undefined') {
+                libraryReady = true;
+                resolve();
+                return;
+            }
+
+            // Cek jika script tag sudah ada
+            const existing = document.querySelector('script[src*="html5-qrcode"]');
+            if (existing) {
+                // Tunggu script lama selesai load
+                existing.addEventListener('load', () => {
+                    libraryReady = true;
+                    resolve();
+                });
+                existing.addEventListener('error', () => reject(new Error('Failed to load html5-qrcode')));
+                return;
+            }
+
+            // Inject script baru
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+            script.async = true;
+            script.onload = () => {
+                libraryReady = true;
+                console.log('[BarcodeScanner] Library loaded.');
+                resolve();
+            };
+            script.onerror = () => reject(new Error('Failed to load html5-qrcode library'));
+            document.head.appendChild(script);
+
+            // Timeout 10 detik
+            setTimeout(() => {
+                if (!libraryReady) {
+                    reject(new Error('Library load timeout'));
+                }
+            }, 10000);
+        });
+
+        return libraryPromise;
+    }
+
+    // ============ Init modal elements ============
+    function initModal() {
+        if (modalEl) return true;
+
+        modalEl = document.getElementById('scannerModal');
+        if (!modalEl) {
+            console.error('[BarcodeScanner] Modal #scannerModal not found in DOM!');
+            return false;
+        }
+
+        // Bind close
+        const closeBtn = document.getElementById('scannerCloseBtn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', close);
+        }
+
+        // Bind manual submit
+        const manualBtn = document.getElementById('scannerManualBtn');
+        const manualInput = document.getElementById('scannerManualInput');
+
+        if (manualBtn && manualInput) {
+            manualBtn.addEventListener('click', () => {
+                const val = manualInput.value.trim();
+                if (val) {
+                    onDetected(val, null);
+                    manualInput.value = '';
+                }
+            });
+
+            manualInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    manualBtn.click();
+                }
+            });
+        }
+
+        return true;
+    }
+
+    // ============ Open scanner ============
+    async function open(options) {
+        options = options || {};
+        callback = options.onDetected || null;
+
+        // 1. Pastikan modal ada
+        if (!initModal()) {
+            alert('Scanner tidak tersedia. Muat ulang halaman.');
+            return;
+        }
+
+        isProcessing = false;
+
+        // 2. Reset UI
+        const status = document.getElementById('scannerStatus');
+        if (status) status.style.display = 'none';
+
+        const subtitle = document.getElementById('scannerSubtitle');
+        if (options.title && subtitle) {
+            subtitle.textContent = options.title;
+            subtitle.style.color = '';
+        }
+
+        // 3. Show modal
+        modalEl.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        // 4. Auto focus manual input (untuk scanner USB)
+        setTimeout(() => {
+            const mi = document.getElementById('scannerManualInput');
+            if (mi) mi.focus();
+        }, 100);
+
+        // 5. Load library & start camera
+        const loading = document.getElementById('scannerLoading');
+        if (loading) loading.style.display = 'block';
+
+        try {
+            await loadLibrary();
+            await startCamera();
+        } catch (err) {
+            console.warn('[BarcodeScanner] Camera error:', err);
+            // Fallback: manual input saja
+            const sub = document.getElementById('scannerSubtitle');
+            if (sub) {
+                sub.textContent = 'Kamera tidak tersedia — gunakan input manual';
+                sub.style.color = '#FBBF24';
+            }
+        } finally {
+            if (loading) loading.style.display = 'none';
+        }
+    }
+
+    // ============ Start camera ============
+    async function startCamera() {
+        if (typeof window.Html5Qrcode === 'undefined') {
+            throw new Error('Html5Qrcode library not loaded');
+        }
+
+        const readerEl = document.getElementById('scannerReader');
+        if (!readerEl) return;
+        readerEl.innerHTML = '';
+
+        // Get cameras
+        const devices = await Html5Qrcode.getCameras();
+        if (!devices || devices.length === 0) {
+            throw new Error('No camera available');
+        }
+
+        // Prefer back camera
+        const backCamera = devices.find(d => {
+            const l = (d.label || '').toLowerCase();
+            return l.includes('back') || l.includes('belakang') ||
+                   l.includes('rear') || l.includes('environment');
+        });
+        const cameraId = backCamera ? backCamera.id : devices[0].id;
+
+        scanner = new Html5Qrcode('scannerReader', {
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.QR_CODE,
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
+                Html5QrcodeSupportedFormats.CODE_93,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.ITF,
+                Html5QrcodeSupportedFormats.CODABAR,
+                Html5QrcodeSupportedFormats.DATA_MATRIX,
+                Html5QrcodeSupportedFormats.PDF_417
+            ],
+            verbose: false
+        });
+
+        await scanner.start(
+            cameraId,
+            {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            },
+            onDetected,
+            () => {}   // ignore per-frame errors
+        );
+    }
+
+    // ============ Detection handler ============
+    function onDetected(decodedText, decodedResult) {
+        if (isProcessing) return;
+        isProcessing = true;
+
+        // Vibrate feedback
+        if (navigator.vibrate) {
+            try { navigator.vibrate(100); } catch (e) {}
+        }
+
+        // Show status
+        const status = document.getElementById('scannerStatus');
+        const statusText = document.getElementById('scannerStatusText');
+        if (status && statusText) {
+            statusText.textContent = decodedText;
+            status.style.display = 'block';
+        }
+
+        // Stop camera
+        stopCamera();
+
+        // Trigger callback after delay
+        setTimeout(() => {
+            const cb = callback;
+            close();
+            if (typeof cb === 'function') {
+                try {
+                    cb(decodedText, decodedResult);
+                } catch (e) {
+                    console.error('[BarcodeScanner] Callback error:', e);
+                }
+            }
+        }, 300);
+    }
+
+    // ============ Stop camera ============
+    async function stopCamera() {
+        if (!scanner) return;
+        const s = scanner;
+        scanner = null;
+        try {
+            if (s.isScanning) {
+                await s.stop();
+            }
+            s.clear();
+        } catch (err) {
+            console.warn('[BarcodeScanner] Stop error:', err);
+        }
+    }
+
+    // ============ Close modal ============
+    function close() {
+        stopCamera();
+        if (modalEl) modalEl.style.display = 'none';
+        document.body.style.overflow = '';
+
+        const mi = document.getElementById('scannerManualInput');
+        if (mi) mi.value = '';
+
+        callback = null;
+        isProcessing = false;
+    }
+
+    // ============ Public API ============
+    window.BarcodeScanner = {
+        open: open,
+        close: close,
+        isReady: () => !!modalEl,
+        __initialized: true
+    };
+
+    // ============ Auto-init saat DOM ready ============
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            initModal();
+            console.log('[BarcodeScanner] Ready.');
+        });
+    } else {
+        initModal();
+        console.log('[BarcodeScanner] Ready.');
+    }
+
+})();
+</script>
+
+</body>
+</html>

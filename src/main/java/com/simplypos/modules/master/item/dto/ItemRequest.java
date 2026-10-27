@@ -19,4 +19,6 @@ public class ItemRequest {
 
     private String description;
     private Boolean isActive = true;
+
+    private String barcode;
 }

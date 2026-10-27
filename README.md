@@ -7,17 +7,17 @@ POST http://localhost:8080/api/v1/auth/login
 
 {
   "username": "superadmin",
-  "password": "superadmin123"
+  "password": "$PoS12345"
 }
 
 {
   "username": "admin",
-  "password": "admin123"
+  "password": "$PoS12345"
 }
 
 {
   "username": "cashier",
-  "password": "cashier123"
+  "password": "$PoS12345"
 }
 
 GET http://localhost:8080/api/v1/auth/me
@@ -35,13 +35,22 @@ $ mvn flyway:migrate
 $ mvn clean package -DskipTests 
 
 ## Upload JAR:
-$ scp target/*.jar [user]@[ip_address]:/[path]/openjdk/target/application.jar
+$ scp -P [port] target/*.jar [user]@[ip_address]:/[path]/openjdk/target/application.jar
 
 ## Upload SQL files:
-$ scp src/main/resources/db/migration/*.sql [user]@[ip_address]:/[path]/db/migration/
+$ scp -P [port] src/main/resources/db/migration/*.sql [user]@[ip_address]:/[path]/db/migration/
 
 ## Restore DB:
 $ psql -U [user] -d [db_name] < [filename].sql
 
 ## Backup DB:
 $ pg_dump -U [user] -d [db_name] -f [filename].sql
+
+## Execute DDL from outside container:
+$ docker exec -i [container_name] psql -U [user] -d [db_name] < V9.sql
+
+## Deployment JAR:
+$ docker cp openjdk/target/application.jar [container_name]:/application.jar
+
+## Clear container logs:
+$ sh -c 'truncate -s 0 /var/lib/docker/containers//-json.log'

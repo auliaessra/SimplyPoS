@@ -29,6 +29,13 @@
             <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
                 <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
                 <input type="text" name="q" th:value="${q}" class="bc-input" th:placeholder="#{common.search} + '...'">
+                <!-- ✅ SCAN BUTTON -->
+                <button type="button" id="btnScanSearch"
+                        class="bc-btn bc-btn-primary bc-btn-sm"
+                        th:title="#{scanner.scan.to.search}">
+                    <i class="bi bi-upc-scan"></i>
+                    <span th:text="#{scanner.scan}">Scan</span>
+                </button>
                 <button type="submit" class="bc-btn bc-btn-default bc-btn-sm">
                     <i class="bi bi-search"></i> <span th:text="#{common.search}">Search</span>
                 </button>
@@ -93,6 +100,32 @@
                 </tbody>
             </table>
         </div>
+    </th:block>
+    <th:block layout:fragment="scripts">
+
+        <!-- 1. Modal + Script BarcodeScanner DULU -->
+        <div th:replace="~{components/scanner-modal :: modal}"></div>
+
+        <!-- 2. BARU script yang pakai BarcodeScanner -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const btn = document.getElementById('btnScanSearch');
+                if (btn) {
+                    btn.addEventListener('click', function () {
+                        if (!window.BarcodeScanner) {
+                            alert('Scanner belum siap, silakan refresh halaman');
+                            return;
+                        }
+                        window.BarcodeScanner.open({
+                            title: 'Scan Barcode Item',
+                            onDetected: function (barcode) {
+                                document.getElementById('barcodeInput').value = barcode;
+                            }
+                        });
+                    });
+                }
+            });
+        </script>
 
     </th:block>
 </body>

@@ -33,7 +33,7 @@
                 </div>
 
                 <div class="bc-card-body">
-                    <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:16px;">
+                    <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;">
                         <div class="bc-form-group">
                             <label class="bc-label required" th:text="#{items.field.code}">Code</label>
                             <input type="text" th:field="*{code}" class="bc-input" required>
@@ -42,18 +42,38 @@
                             <label class="bc-label required" th:text="#{items.field.name}">Name</label>
                             <input type="text" th:field="*{name}" class="bc-input" required>
                         </div>
+                    </div>
+
+                    <!-- ============ BARCODE dengan SCAN BUTTON ============ -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="bc-form-group">
+                            <label class="bc-label" th:text="#{items.field.barcode}">Barcode</label>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" th:field="*{barcode}" id="barcodeInput"
+                                    class="bc-input"
+                                    th:placeholder="#{items.field.barcode.placeholder}"
+                                    style="flex:1;">
+                                <button type="button" id="btnScanBarcode"
+                                        class="bc-btn bc-btn-primary"
+                                        style="flex-shrink:0;padding:6px 14px;"
+                                        th:title="#{scanner.open}">
+                                    <i class="bi bi-upc-scan" style="font-size:16px;"></i>
+                                    <span class="btn-label" th:text="#{scanner.scan}">Scan</span>
+                                </button>
+                            </div>
+                            <small style="font-size:11px;color:var(--bc-text-secondary);"
+                                th:text="#{items.field.barcode.hint}">
+                                Scan barcode atau ketik manual. Harus unik.
+                            </small>
+                        </div>
+
                         <div class="bc-form-group">
                             <label class="bc-label required" th:text="#{items.field.unit}">Unit</label>
                             <select th:field="*{unitId}" class="bc-select" required>
                                 <option value="" th:text="#{common.select.item}">- Pilih Unit -</option>
                                 <option th:each="u : ${units}" th:value="${u.id}"
-                                    th:text="${u.code} + ' - ' + ${u.name}"
-                                    th:selected="${item.unitId != null and item.unitId == u.id}"></option>
+                                        th:text="${u.code} + ' - ' + ${u.name}"></option>
                             </select>
-                            <small style="font-size:11px;color:var(--bc-text-secondary);"
-                                th:text="#{items.field.unit.hint}">
-                                Unit utama untuk item ini (untuk display & konversi)
-                            </small>
                         </div>
                     </div>
 
@@ -82,6 +102,47 @@
                 </div>
             </form>
         </div>
+    </th:block>
+    <th:block layout:fragment="scripts">
+        <!-- ============================================================
+            1. SCANNER MODAL (HARUS PERTAMA)
+            ============================================================ -->
+        <div th:replace="~{components/scanner-modal :: modal}"></div>
+
+        <!-- ============================================================
+            2. SCRIPT YANG PAKAI SCANNER (SETELAH MODAL)
+            ============================================================ -->
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnScan = document.getElementById('btnScanBarcode');
+            const barcodeInput = document.getElementById('barcodeInput');
+
+            if (!btnScan) return;
+
+            btnScan.addEventListener('click', function () {
+                // ===== Defensive check =====
+                if (!window.BarcodeScanner) {
+                    console.error('[scan] BarcodeScanner not loaded');
+                    alert('Scanner tidak tersedia. Silakan refresh halaman (Ctrl+F5)');
+                    return;
+                }
+
+                window.BarcodeScanner.open({
+                    title: 'Scan Barcode Item',
+                    onDetected: function (barcode) {
+                        if (barcodeInput) {
+                            barcodeInput.value = barcode;
+                            barcodeInput.focus();
+                        }
+                    }
+                });
+            });
+
+            console.log('[scan] Button bound:', !!btnScan,
+                        'Scanner ready:', !!window.BarcodeScanner);
+        });
+        </script>
+
     </th:block>
 </body>
 
