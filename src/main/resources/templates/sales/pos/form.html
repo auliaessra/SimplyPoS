@@ -52,7 +52,7 @@
                             th:placeholder="#{pos.search}" style="flex:1;">
 
                         <!-- ✅ SCAN BUTTON -->
-                        <button type="button" id="btnScanPOS"
+                        <button type="button" id="btnScanBarcode"
                                 class="bc-btn bc-btn-primary bc-btn-sm"
                                 style="flex-shrink:0;"
                                 th:title="#{scanner.scan}">
@@ -639,30 +639,21 @@
         <!-- ============================================================
             3. SCANNER BINDING (paling bawah)
             ============================================================ -->
+        <!-- Baru script -->
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Tombol scan
-                document.getElementById('btnScanPOS')?.addEventListener('click', function () {
+                document.getElementById('btnScanBarcode')?.addEventListener('click', function () {
                     if (!window.BarcodeScanner) {
                         alert('Scanner tidak siap. Refresh halaman.');
                         return;
                     }
                     window.BarcodeScanner.open({
-                        title: 'Scan barcode produk',
+                        title: 'Scan Barcode Item',
                         onDetected: function (barcode) {
-                            if (window.handleScannedBarcode) {
-                                window.handleScannedBarcode(barcode);
-                            }
+                            document.getElementById('searchProduct').value = barcode;
+                            renderProducts(barcode);
                         }
                     });
-                });
-
-                // Listen USB/Bluetooth scanner (wedge)
-                document.addEventListener('barcode:scanned', function (e) {
-                    console.log('Wedge scan:', e.detail.barcode);
-                    if (window.handleScannedBarcode) {
-                        window.handleScannedBarcode(e.detail.barcode);
-                    }
                 });
             });
         </script>

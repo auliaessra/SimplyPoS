@@ -28,7 +28,7 @@
         <div class="bc-filter-bar">
             <form method="get" style="display:flex;gap:8px;align-items:center;flex:1;">
                 <i class="bi bi-funnel" style="color:var(--bc-text-muted);"></i>
-                <input type="text" name="q" th:value="${q}" class="bc-input" th:placeholder="#{common.search} + '...'">
+                <input type="text" name="q" th:value="${q}" id="q" class="bc-input" th:placeholder="#{common.search} + '...'">
                 <!-- ✅ SCAN BUTTON -->
                 <button type="button" id="btnScanSearch"
                         class="bc-btn bc-btn-primary bc-btn-sm"
@@ -107,24 +107,21 @@
         <div th:replace="~{components/scanner-modal :: modal}"></div>
 
         <!-- 2. BARU script yang pakai BarcodeScanner -->
+        <!-- Baru script -->
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                const btn = document.getElementById('btnScanSearch');
-                if (btn) {
-                    btn.addEventListener('click', function () {
-                        console.log(window.BarcodeScanner)
-                        if (!window.BarcodeScanner) {
-                            alert('Scanner belum siap, silakan refresh halaman');
-                            return;
+                document.getElementById('btnScanSearch')?.addEventListener('click', function () {
+                    if (!window.BarcodeScanner) {
+                        alert('Scanner tidak siap. Refresh halaman.');
+                        return;
+                    }
+                    window.BarcodeScanner.open({
+                        title: 'Scan Barcode Item',
+                        onDetected: function (barcode) {
+                            document.getElementById('q').value = barcode;
                         }
-                        window.BarcodeScanner.open({
-                            title: 'Scan Barcode Item',
-                            onDetected: function (barcode) {
-                                document.getElementById('barcodeInput').value = barcode;
-                            }
-                        });
                     });
-                }
+                });
             });
         </script>
 
