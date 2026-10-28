@@ -75,7 +75,7 @@
                                 <div style="font-weight:700;color:var(--bc-primary);
                                         font-size:16px;margin-top:2px;"
                                     th:with="stockVal=${currentPrice?.stockQtyMl != null ? currentPrice.stockQtyMl : 0}"
-                                    th:text="${#numbers.formatDecimal(stockVal, 0, 'COMMA', 2, 'POINT')} + ' ML'">
+                                    th:text="${#numbers.formatDecimal(stockVal, 0, 'COMMA', 2, 'POINT') + ' ' + currentPrice.unitCode}">
                                     0 ML
                                 </div>
                             </div>

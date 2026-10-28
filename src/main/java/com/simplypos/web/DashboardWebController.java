@@ -19,6 +19,26 @@ public class DashboardWebController {
     private final DashboardService service;
     private final StoreRepository storeRepository;
 
+    @GetMapping("")
+    public String redirect() {
+        return "redirect:/web/dashboard";
+    }
+
+    @GetMapping("/")
+    public String redirect2() {
+        return "redirect:/web/dashboard";
+    }
+
+    @GetMapping("/web")
+    public String redirectWeb() {
+        return "redirect:/web/dashboard";
+    }
+
+    @GetMapping("/web/")
+    public String redirectWeb2() {
+        return "redirect:/web/dashboard";
+    }
+
     @GetMapping("/web/dashboard")
     @PreAuthorize("isAuthenticated()")
     public String dashboard(@RequestParam(required = false) Long storeId, Model model) {
