@@ -19,8 +19,12 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
                 SELECT i FROM Item i
                 WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
                    OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                   OR LOWER(i.barcode) LIKE LOWER(CONCAT('%', :keyword, '%'))
             """)
     Page<Item> search(@Param("keyword") String keyword, Pageable pageable);
 
     Page<Item> findByIsActiveTrue(Pageable pageable);
+
+    Optional<Item> findByBarcode(String barcode);    // ← BARU
+    boolean existsByBarcode(String barcode);         // ← BARU
 }

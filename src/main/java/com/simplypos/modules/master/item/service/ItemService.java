@@ -45,6 +45,13 @@ public class ItemService {
             throw new BusinessException("Kode item sudah digunakan: " + request.getCode());
         }
 
+        // ✅ Validasi barcode unik
+        if (request.getBarcode() != null && !request.getBarcode().isBlank()) {
+            if (repo.existsByBarcode(request.getBarcode())) {
+                throw new BusinessException("Barcode sudah digunakan");
+            }
+        }
+
         Unit unit = resolveUnit(request.getUnitId());
 
         Item entity = Item.builder()
@@ -53,6 +60,7 @@ public class ItemService {
                 .unit(unit)
                 .description(request.getDescription())
                 .isActive(request.getIsActive() == null ? true : request.getIsActive())
+                .barcode(request.getBarcode())
                 .build();
 
         return toResponse(repo.save(entity));
@@ -68,6 +76,16 @@ public class ItemService {
             throw new BusinessException("Kode item sudah digunakan");
         }
 
+        // ✅ Validasi barcode unik (kecuali dirinya sendiri)
+        if (request.getBarcode() != null && !request.getBarcode().isBlank()) {
+            repo.findByBarcode(request.getBarcode()).ifPresent(other -> {
+                if (!other.getId().equals(id)) {
+                    throw new BusinessException("Barcode sudah digunakan");
+                }
+            });
+        }
+
+        entity.setBarcode(request.getBarcode());
         entity.setCode(request.getCode());
         entity.setName(request.getName());
         entity.setDescription(request.getDescription());
@@ -103,6 +121,19 @@ public class ItemService {
                 e.getUnitCode(),
                 e.getUnitName(),
                 e.getDescription(),
-                e.getIsActive());
+                e.getIsActive(),
+            e.getBarcode());
+    }
+
+    /**
+     * Cari item berdasarkan barcode.
+     */
+    public ItemResponse findByBarcode(String barcode) {
+        if (barcode == null || barcode.isBlank()) {
+            throw new BusinessException("Barcode tidak boleh kosong");
+        }
+        return repo.findByBarcode(barcode.trim())
+                .map(this::toResponse)
+                .orElseThrow(() -> new BusinessException("Item dengan barcode tersebut tidak ditemukan"));
     }
 }

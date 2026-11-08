@@ -11,7 +11,9 @@ INSERT INTO
         label,
         description,
         sort_order,
-        is_public
+        is_public,
+        created_at,
+        updated_at
     )
 VALUES (
         'app.favicon.path',
@@ -21,6 +23,8 @@ VALUES (
         'Favicon',
         'Ikon yang tampil di tab browser (ICO/PNG, 32x32 atau 64x64, maks 100KB)',
         5,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     )
 ON CONFLICT (setting_key) DO NOTHING;

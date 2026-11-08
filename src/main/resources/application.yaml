@@ -14,7 +14,7 @@ spring:
     name: simply-post-api
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/simply_pos
+    url: jdbc:postgresql://localhost:5433/simply_pos
     username: simply_pos
     password: simply_pos
     driver-class-name: org.postgresql.Driver

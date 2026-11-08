@@ -33,7 +33,9 @@ INSERT INTO
         label,
         description,
         sort_order,
-        is_public
+        is_public,
+        created_at,
+        updated_at
     )
 VALUES (
         'login.head.title',
@@ -43,7 +45,9 @@ VALUES (
         'Title Head Login',
         'Judul tab browser di halaman login',
         10,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'login.logo.path',
@@ -53,7 +57,9 @@ VALUES (
         'Logo Login',
         'Logo yang tampil di halaman login (PNG/JPG/SVG, maks 500KB)',
         20,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'login.logo.text',
@@ -63,7 +69,9 @@ VALUES (
         'Logo Text (Fallback)',
         'Teks yang tampil jika logo tidak di-upload',
         30,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'login.title',
@@ -73,7 +81,9 @@ VALUES (
         'Judul Login',
         'Judul utama di halaman login',
         40,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'login.subtitle',
@@ -83,7 +93,9 @@ VALUES (
         'Subtitle Login',
         'Sub-judul di bawah judul login',
         50,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'login.footer',
@@ -93,7 +105,9 @@ VALUES (
         'Footer Login',
         'Teks footer di halaman login',
         60,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'login.background.color',
@@ -103,7 +117,9 @@ VALUES (
         'Warna Background Login',
         'Warna background halaman login (hex)',
         70,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     )
 ON CONFLICT (setting_key) DO NOTHING;
 
@@ -117,7 +133,9 @@ INSERT INTO
         label,
         description,
         sort_order,
-        is_public
+        is_public,
+        created_at,
+        updated_at
     )
 VALUES (
         'sidebar.brand.logo.path',
@@ -127,7 +145,9 @@ VALUES (
         'Logo Sidebar',
         'Logo kecil di sidebar (PNG/SVG, maks 500KB)',
         10,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'sidebar.brand.text',
@@ -137,7 +157,9 @@ VALUES (
         'Brand Text (Fallback)',
         'Teks fallback jika logo sidebar tidak di-upload',
         20,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'sidebar.brand.name',
@@ -147,7 +169,9 @@ VALUES (
         'Nama Brand',
         'Nama brand yang tampil di sidebar',
         30,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'sidebar.show.brand.name',
@@ -157,7 +181,9 @@ VALUES (
         'Tampilkan Nama Brand',
         'Tampilkan nama brand di sebelah logo',
         40,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     )
 ON CONFLICT (setting_key) DO NOTHING;
 
@@ -171,7 +197,9 @@ INSERT INTO
         label,
         description,
         sort_order,
-        is_public
+        is_public,
+        created_at,
+        updated_at
     )
 VALUES (
         'app.name',
@@ -181,7 +209,9 @@ VALUES (
         'Nama Aplikasi',
         'Nama aplikasi untuk tab browser',
         10,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'app.tagline',
@@ -191,7 +221,9 @@ VALUES (
         'Tagline',
         'Tagline aplikasi',
         20,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     ),
     (
         'app.footer',
@@ -201,6 +233,8 @@ VALUES (
         'Footer',
         'Footer aplikasi',
         30,
-        TRUE
+        TRUE,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
     )
 ON CONFLICT (setting_key) DO NOTHING;
