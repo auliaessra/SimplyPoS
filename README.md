@@ -1,10 +1,10 @@
 # 🧴 Simply PoS — Business Management System
 
 > A modern, multi-branch ERP & POS system built for perfume retail businesses.
-> Powered by **Spring Boot 3.3**, **PostgreSQL**, **Thymeleaf**, and **Bootstrap 5**.
+> Powered by **Spring Boot 4.1**, **PostgreSQL**, **Thymeleaf**, and **Bootstrap 5**.
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring Boot-4.1.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://openjdk.org/projects/jdk/25/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
