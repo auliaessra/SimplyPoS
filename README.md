@@ -3,7 +3,7 @@
 > A modern, multi-branch ERP & POS system built for perfume retail businesses.
 > Powered by **Spring Boot 4.1**, **PostgreSQL**, **Thymeleaf**, and **Bootstrap 5**.
 
-[![Spring Boot](https://img.shields.io/badge/Spring Boot-4.1.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://openjdk.org/projects/jdk/25/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
